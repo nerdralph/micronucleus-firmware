@@ -308,21 +308,6 @@ extern uchar    usbConfiguration;
 #ifndef USB_CFG_DESCR_PROPS_CONFIGURATION
 #define USB_CFG_DESCR_PROPS_CONFIGURATION           0
 #endif
-#ifndef USB_CFG_DESCR_PROPS_STRINGS
-#define USB_CFG_DESCR_PROPS_STRINGS                 0
-#endif
-#ifndef USB_CFG_DESCR_PROPS_STRING_0
-#define USB_CFG_DESCR_PROPS_STRING_0                0
-#endif
-#ifndef USB_CFG_DESCR_PROPS_STRING_VENDOR
-#define USB_CFG_DESCR_PROPS_STRING_VENDOR           0
-#endif
-#ifndef USB_CFG_DESCR_PROPS_STRING_PRODUCT
-#define USB_CFG_DESCR_PROPS_STRING_PRODUCT          0
-#endif
-#ifndef USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER
-#define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    0
-#endif
 #ifndef USB_CFG_DESCR_PROPS_UNKNOWN
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0
 #endif
@@ -343,30 +328,6 @@ extern
 PROGMEM const
 #endif
 char usbDescriptorConfiguration[];
-
-extern
-#if !(USB_CFG_DESCR_PROPS_STRING_0 & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-char usbDescriptorString0[];
-
-extern
-#if !(USB_CFG_DESCR_PROPS_STRING_VENDOR & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-int usbDescriptorStringVendor[];
-
-extern
-#if !(USB_CFG_DESCR_PROPS_STRING_PRODUCT & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-int usbDescriptorStringDevice[];
-
-extern
-#if !(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-int usbDescriptorStringSerialNumber[];
 
 #endif /* __ASSEMBLER__ */
 

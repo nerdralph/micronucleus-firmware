@@ -70,49 +70,6 @@ optimizing hints:
 - assign char sized expressions to variables to force 8 bit arithmetics
 */
 
-/* -------------------------- String Descriptors --------------------------- */
-
-#if USB_CFG_DESCR_PROPS_STRINGS == 0
-
-#if USB_CFG_DESCR_PROPS_STRING_0 == 0
-#undef USB_CFG_DESCR_PROPS_STRING_0
-#define USB_CFG_DESCR_PROPS_STRING_0    sizeof(usbDescriptorString0)
-PROGMEM const char usbDescriptorString0[] = { /* language descriptor */
-    4,          /* sizeof(usbDescriptorString0): length of descriptor in bytes */
-    3,          /* descriptor type */
-    0x09, 0x04, /* language index (0x0409 = US-English) */
-};
-#endif
-
-#if USB_CFG_DESCR_PROPS_STRING_VENDOR == 0 && USB_CFG_VENDOR_NAME_LEN
-#undef USB_CFG_DESCR_PROPS_STRING_VENDOR
-#define USB_CFG_DESCR_PROPS_STRING_VENDOR   sizeof(usbDescriptorStringVendor)
-PROGMEM const int  usbDescriptorStringVendor[] = {
-    USB_STRING_DESCRIPTOR_HEADER(USB_CFG_VENDOR_NAME_LEN),
-    USB_CFG_VENDOR_NAME
-};
-#endif
-
-#if USB_CFG_DESCR_PROPS_STRING_PRODUCT == 0 && USB_CFG_DEVICE_NAME_LEN
-#undef USB_CFG_DESCR_PROPS_STRING_PRODUCT
-#define USB_CFG_DESCR_PROPS_STRING_PRODUCT   sizeof(usbDescriptorStringDevice)
-PROGMEM const int  usbDescriptorStringDevice[] = {
-    USB_STRING_DESCRIPTOR_HEADER(USB_CFG_DEVICE_NAME_LEN),
-    USB_CFG_DEVICE_NAME
-};
-#endif
-
-#if USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER == 0 && USB_CFG_SERIAL_NUMBER_LEN
-#undef USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER
-#define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    sizeof(usbDescriptorStringSerialNumber)
-PROGMEM const int usbDescriptorStringSerialNumber[] = {
-    USB_STRING_DESCRIPTOR_HEADER(USB_CFG_SERIAL_NUMBER_LEN),
-    USB_CFG_SERIAL_NUMBER
-};
-#endif
-
-#endif  /* USB_CFG_DESCR_PROPS_STRINGS == 0 */
-
 /* --------------------------- Device Descriptor --------------------------- */
 
 #if USB_CFG_DESCR_PROPS_DEVICE == 0
@@ -132,10 +89,10 @@ PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
     (char)USB_CFG_VENDOR_ID,/* 2 bytes */
     (char)USB_CFG_DEVICE_ID,/* 2 bytes */
     USB_CFG_DEVICE_VERSION, /* 2 bytes */
-    USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0,         /* manufacturer string index */
-    USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0,        /* product string index */
-    USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0,  /* serial number string index */
-    1,          /* number of configurations */
+    0,                      /* manufacturer string index */
+    0,                      /* product string index */
+    0,                      /* serial number string index */
+    1,                      /* number of configurations */
 };
 #endif
 
@@ -232,18 +189,6 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
         GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_DEVICE, usbDescriptorDevice)
     SWITCH_CASE(USBDESCR_CONFIG)    /* 2 */
         GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_CONFIGURATION, usbDescriptorConfiguration)
-    SWITCH_CASE(USBDESCR_STRING)    /* 3 */
-        SWITCH_START(rq->wValue.bytes[0])
-        SWITCH_CASE(0)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_0, usbDescriptorString0)
-        SWITCH_CASE(1)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_VENDOR, usbDescriptorStringVendor)
-        SWITCH_CASE(2)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_PRODUCT, usbDescriptorStringDevice)
-        SWITCH_CASE(3)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
-        SWITCH_DEFAULT
-        SWITCH_END
     SWITCH_DEFAULT
     SWITCH_END
 
