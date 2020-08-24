@@ -82,13 +82,9 @@ foundK:                         ;[-12]
 ; push more registers and initialize values while we sample the first bits:
 ;----------------------------------------------------------------------------
 haveTwoBitsK:
-;    push    x1              ;[1] // dummy for timing
-;    pop     x1              ;[3]
-;    push    x1              ;[5]
-    rcall return             ;[1] 7c delay
+    rcall return            ;[1] 7c delay
     ldi     shift, 0        ;[8]
     ldi     x3, 1<<4        ;[9] [rx loop init] first sample is inverse bit, compensate that
-;    pop     x1              ;[9] == leap
     ldi     leap, 0         ;[10] [rx loop init] (was [17]
     in      x1, USBIN       ;[11] <-- sample bit 0
     andi    x1, USBMASK     ;[12]
