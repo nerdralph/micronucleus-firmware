@@ -19,8 +19,8 @@ the file appropriate for the given clock rate.
 #include "usbdrv.h"         /* for common defs */
 
 /* register names */
-#define x1      r16
-#define x2      r17
+#define x1      r23
+#define x2      r24
 #define shift   r18
 #define cnt     r19
 #define x3      r20
@@ -90,7 +90,7 @@ the file appropriate for the given clock rate.
 ;   poly    r20+r21
 ;   scratch r23
 ;   resCrc  r24+r25
-;   ptr     Z
+;   ptr     X
 ; could use X for argPtr to avoid movw instr
 usbCrc16Append:
     movw    ptrL, argPtrL

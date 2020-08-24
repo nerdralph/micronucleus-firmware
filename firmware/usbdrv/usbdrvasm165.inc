@@ -29,7 +29,7 @@ of CPU cycles, but even an exact number of cycles!
 ;Software-receiver engine. Strict timing! Don't change unless you can preserve timing!
 ;interrupt response time: 4 cycles + insn running = 7 max if interrupts always enabled
 ;max allowable interrupt latency: 59 cycles -> max 52 cycles interrupt disable
-;max stack usage: [ret(2), r0, SREG, YL, YH, shift, x1, x2, x3, x4, cnt] = 12 bytes
+;max stack usage: [ret(2), r0, SREG, XL, XH, shift, x1, x2, x3, x4, cnt] = 12 bytes
 ;nominal frequency: 16.5 MHz -> 11 cycles per bit
 ; 16.3125 MHz < F_CPU < 16.6875 MHz (+/- 1.1%)
 ; Numbers in brackets are clocks counted from center of last sync bit
@@ -37,20 +37,20 @@ of CPU cycles, but even an exact number of cycles!
 
 
 USB_INTR_VECTOR:
-;order of registers pushed: YL, SREG [sofError], r0, YH, shift, x1, x2, x3, x4, cnt
-#    push    YL                  ;[-23] push only what is necessary to sync with edge ASAP
-#    in      YL, SREG            ;[-21]
-#    push    YL                  ;[-20]
+;order of registers pushed: XL, SREG [sofError], r0, XH, shift, x1, x2, x3, x4, cnt
+#    push    XL                  ;[-23] push only what is necessary to sync with edge ASAP
+#    in      XL, SREG            ;[-21]
+#    push    XL                  ;[-20]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
 ;sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;sync up with J to K edge during sync pattern -- use fastest possible loops
 ;The first part waits at most 1 bit long since we must be in sync pattern.
-;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
+;XL is guarenteed to be < 0x80 because I flag is clear. When we jump to
 ;waitForJ, ensure that this prerequisite is met.
 waitForJ:
-    inc     YL
+    inc     XL
     sbis    USBIN, USBMINUS
     brne    waitForJ        ; just make sure we have ANY timeout
 waitForK:
@@ -76,11 +76,11 @@ foundK:                         ;[-12]
 ;   [---]                       ;[-11]
     pop     r0                  ;[-10] // dummy for timing
 ;   [---]                       ;[-9]
-    lds     YL, usbInputBufOffset;[-8]
+    lds     XL, usbInputBufOffset;[-8]
 ;   [---]                       ;[-7]
-    clr     YH                  ;[-6]
-    subi    YL, lo8(-(usbRxBuf));[-5] [rx loop init]
-    sbci    YH, hi8(-(usbRxBuf));[-4] [rx loop init]
+    clr     XH                  ;[-6]
+    subi    XL, lo8(-(usbRxBuf));[-5] [rx loop init]
+    sbci    XH, hi8(-(usbRxBuf));[-4] [rx loop init]
     mov     r0, x2              ;[-3] [rx loop init]
     sbis    USBIN, USBMINUS     ;[-2] we want two bits K (sample 2 cycles too early)
     rjmp    haveTwoBitsK        ;[-1]
@@ -262,7 +262,7 @@ unstuff4:                   ;[053]
 rxLoop:                     ;[085]
     eor     x3, shift       ;[086] reconstruct: x3 is 0 at bit locations we changed, 1 at others
     in      x1, USBIN       ;[000] <-- bit 0
-    st      y+, x3          ;[001]
+    st      x+, x3          ;[001]
 ;   [---]                   ;[002]
     eor     r0, x1          ;[003]
     or      phase, r0       ;[004]
@@ -330,13 +330,13 @@ macro POP_STANDARD ; 16 cycles
 #    pop     x2
 #    pop     x1
 #    pop     shift
-#    pop     YH
+#    pop     XH
 #    pop     r0
     endm
 macro POP_RETI     ; 5 cycles
-#    pop     YL
-#    out     SREG, YL
-#    pop     YL
+#    pop     XL
+#    out     SREG, XL
+#    pop     XL
     endm
 
 #include "asmcommon.inc"
@@ -370,8 +370,8 @@ sendAckAndReti:
     ldi     cnt, USBPID_ACK ;[-17]
 sendCntAndReti:
     mov     r0, cnt         ;[-16]
-    ldi     YL, 0           ;[-15] R0 address is 0
-    ldi     YH, 0           ;[-14]
+    ldi     XL, 0           ;[-15] R0 address is 0
+    ldi     XH, 0           ;[-14]
     ldi     cnt, 2          ;[-13]
 ;   rjmp    usbSendAndReti      fallthrough
 
@@ -411,7 +411,7 @@ didStuff7:
     ror     x2              ;[0]
     cpi     x2, 0xfc        ;[1]
     brcc    bitstuff7       ;[2]
-    ld      shift, y+       ;[3]
+    ld      shift, x+       ;[3]
     dec     cnt             ;[5]
     brne    byteloop        ;[6]
 ;make SE0:
@@ -421,8 +421,8 @@ didStuff7:
     out     USBOUT, x1      ;[11] <-- out SE0 -- from now 2 bits = 22 cycles until bus idle
 ;2006-03-06: moved transfer of new address to usbDeviceAddr from C-Code to asm:
 ;set address only after data packet was sent, not after handshake
-    subi    YL, 2           ;[0] Only assign address on data packets, not ACK/NAK in r0
-    sbci    YH, 0           ;[1]
+    subi    XL, 2           ;[0] Only assign address on data packets, not ACK/NAK in r0
+    sbci    XH, 0           ;[1]
     breq    skipAddrAssign  ;[2]
     sts     usbDeviceAddr, x2; if not skipped: SE0 is one cycle longer
 skipAddrAssign:

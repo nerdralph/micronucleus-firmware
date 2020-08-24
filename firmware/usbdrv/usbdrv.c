@@ -18,11 +18,6 @@
 
  // code cleanup and optimization by Ralph Doncaster 2020-08
 
-
-#define MNHACK_ONLY_FLASH_MSGPTR
-/*     b) Do not use preinitialized global variables to avoid having to initialize
- *        the data section.
- */
 #define MNHACK_NO_DATASECTION
 
 #include "usbdrv.h"
