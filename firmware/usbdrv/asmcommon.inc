@@ -79,7 +79,6 @@ se0:
     breq    handleSetupOrOut    ;[30]
     cpi     token, USBPID_OUT   ;[31]
     brne    ignorePacket        ;[32] must be ack, nak or whatever
-;   rjmp    handleSetupOrOut    ; fallthrough
 
 ;Setup and Out are followed by a data packet two bit times (16 cycles) after
 ;the end of SE0. The sync code allows up to 40 cycles delay from the start of
@@ -93,9 +92,8 @@ handleSetupOrOut:               ;[32]
     ldi     XL,10               ; Time out
 waitForData:
     USB_LOAD_PENDING(x2)        ;[xx]
-    sbrc    x2, USB_INTR_PENDING_BIT;[xx] check whether data is already arriving
-    rjmp    storeTokenAndReturn
     dec     XL
+    sbrs    x2, USB_INTR_PENDING_BIT;[xx] check whether data is already arriving
     brne     waitForData
 
 storeTokenAndReturn:
