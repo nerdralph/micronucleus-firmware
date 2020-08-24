@@ -49,12 +49,11 @@ waitForJ:
     inc     XL
     sbis    USBIN, USBMINUS
     brne    waitForJ        ; just make sure we have ANY timeout
+    lpm                                 ; 3c delay
 waitForK:
 ;The following code results in a sampling window of < 1/4 bit which meets the spec.
     sbis    USBIN, USBMINUS     ;[-15]
     rjmp    foundK              ;[-14]
-    sbis    USBIN, USBMINUS
-    rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
     sbis    USBIN, USBMINUS
@@ -68,20 +67,13 @@ foundK:                         ;[-12]
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for center sampling]
 ;we have 1 bit time for setup purposes, then sample again. Numbers in brackets
 ;are cycles from center of first sync (double K) bit after the instruction
-    push    r0                  ;[-12] // dummy for timing
-;   [---]                       ;[-11]
-    lds     XL, usbInputBufOffset;[-10]
-;   [---]                       ;[-9]
-    clr     XH                  ;[-8]
-    subi    XL, lo8(-(usbRxBuf));[-7] [rx loop init]
-    sbci    XH, hi8(-(usbRxBuf));[-6] [rx loop init]
-    pop     r0                  ;[-5] // dummy for timing
-;   [---]                       ;[-4]
+    rcall return                ;[-12] 7c delay
+    ldi    XL, lo8(usbRxBuf);   [-5] [rx loop init]
+    ldi    XH, hi8(usbRxBuf);   [-4] [rx loop init]
     ldi     bitcnt, 0x55        ;[-3] [rx loop init]
     sbis    USBIN, USBMINUS     ;[-2] we want two bits K (sample 2 cycles too early)
     rjmp    haveTwoBitsK        ;[-1]
-    push    r0                  ;[0] // dummy for timing
-    pop     r0                  ;[2] // dummy for timing
+    nop2                        ;[0] // dummy for timing
     rjmp    waitForK            ;[4] this was not the end of sync, retry
 ; The entire loop from waitForK until rjmp waitForK above must not exceed two
 ; bit times (= 21 cycles).
@@ -90,20 +82,19 @@ foundK:                         ;[-12]
 ; push more registers and initialize values while we sample the first bits:
 ;----------------------------------------------------------------------------
 haveTwoBitsK:
-    push    x1              ;[1] // dummy for timing
-    pop     x1              ;[3]
-    push    x1              ;[5]
-    ldi     shift, 0        ;[7]
-    ldi     x3, 1<<4        ;[8] [rx loop init] first sample is inverse bit, compensate that
-    pop     x1              ;[9] == leap
-
+;    push    x1              ;[1] // dummy for timing
+;    pop     x1              ;[3]
+;    push    x1              ;[5]
+    rcall return             ;[1] 7c delay
+    ldi     shift, 0        ;[8]
+    ldi     x3, 1<<4        ;[9] [rx loop init] first sample is inverse bit, compensate that
+;    pop     x1              ;[9] == leap
+    ldi     leap, 0         ;[10] [rx loop init] (was [17]
     in      x1, USBIN       ;[11] <-- sample bit 0
     andi    x1, USBMASK     ;[12]
     bst     x1, USBMINUS    ;[13]
     bld     shift, 7        ;[14]
-;    push    cnt             ;[15]
-    nop2                    ;[15]
-    ldi     leap, 0         ;[17] [rx loop init]
+    lpm                     ;[15] 3c delay
     ldi     cnt, USB_BUFSIZE;[18] [rx loop init]
     rjmp    rxbit1          ;[19] arrives at [21]
 
@@ -337,4 +328,6 @@ se0Delay:
     out     USBOUT, x1      ;[21] <-- out J (idle) -- end of SE0 (EOP signal)
     out     USBDDR, x2      ;[22] <-- release bus now
     out     USBOUT, x3      ;[23] <-- ensure no pull-up resistors are active
-    rjmp    doReturn
+return:
+    ret
+;    rjmp    doReturn

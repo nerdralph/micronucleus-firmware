@@ -33,7 +33,7 @@ documentation of the entire driver.
 
 /* raw USB registers / interface to assembler code: */
 uchar usbRxBuf[2*USB_BUFSIZE];  /* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
-uchar       usbInputBufOffset;  /* offset in usbRxBuf used for low level receiving */
+// uchar       usbInputBufOffset;  /* offset in usbRxBuf used for low level receiving */
 uchar       usbDeviceAddr;      /* assigned during enumeration, defaults to 0 */
 uchar       usbNewDeviceAddr;   /* device ID which should be set after status phase */
 uchar       usbConfiguration;   /* currently selected configuration. Administered by driver, but not used */

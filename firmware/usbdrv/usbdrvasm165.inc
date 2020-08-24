@@ -52,7 +52,8 @@ USB_INTR_VECTOR:
 waitForJ:
     inc     XL
     sbis    USBIN, USBMINUS
-    brne    waitForJ        ; just make sure we have ANY timeout
+    brne    waitForJ                    ; just make sure we have ANY timeout
+    lpm                                 ; 3c delay
 waitForK:
 ;The following code results in a sampling window of < 1/4 bit which meets the spec.
     sbis    USBIN, USBMINUS     ;[-15]
@@ -63,8 +64,8 @@ waitForK:
     rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
-    sbis    USBIN, USBMINUS
-    rjmp    foundK
+;    sbis    USBIN, USBMINUS
+;    rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
     rjmp    sofError
@@ -72,6 +73,7 @@ foundK:                         ;[-12]
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for center sampling]
 ;we have 1 bit time for setup purposes, then sample again. Numbers in brackets
 ;are cycles from center of first sync (double K) bit after the instruction
+#if 0
     push    r0                  ;[-12] // dummy for timing
 ;   [---]                       ;[-11]
     pop     r0                  ;[-10] // dummy for timing
@@ -81,11 +83,16 @@ foundK:                         ;[-12]
     clr     XH                  ;[-6]
     subi    XL, lo8(-(usbRxBuf));[-5] [rx loop init]
     sbci    XH, hi8(-(usbRxBuf));[-4] [rx loop init]
+#endif
+    rcall return                ;[-12] 7c delay
+    ldi    XL, lo8(usbRxBuf);   [-5] [rx loop init]
+    ldi    XH, hi8(usbRxBuf);   [-4] [rx loop init]
     mov     r0, x2              ;[-3] [rx loop init]
     sbis    USBIN, USBMINUS     ;[-2] we want two bits K (sample 2 cycles too early)
     rjmp    haveTwoBitsK        ;[-1]
-    push    r0                  ;[0] // dummy for timing
-    pop     r0                  ;[2] // dummy for timing
+    nop2                        ;[0] // dummy for timing
+;    push    r0                  ;[0] // dummy for timing
+;    pop     r0                  ;[2] // dummy for timing
     rjmp    waitForK            ;[4] this was not the end of sync, retry
 ; The entire loop from waitForK until rjmp waitForK above must not exceed two
 ; bit times (= 22 cycles).
@@ -441,5 +448,6 @@ se0Delay:
     out     USBOUT, x1      ;[23] <-- out J (idle) -- end of SE0 (EOP signal)
     out     USBDDR, x2      ;[24] <-- release bus now
     out     USBOUT, x3      ;[25] <-- ensure no pull-up resistors are active
-    rjmp    doReturn
-
+return:
+    ret
+;    rjmp    doReturn
