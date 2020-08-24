@@ -4,16 +4,16 @@
 
 # Controller type: ATtiny 85
 # Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
-# Last Change:     Jun 16,2020
+# Last Change:     Aug 24,2020
 
 # Enable unsafe optimizations. This will disable several safety features in microncleus to save around 40 more bytes
 #
 # Disabled features:
 #   * Stack pointer and SREG initialization in CRT
-#   * Client side reset vector patching
 #   * USB collision detection. Micronucleus will not work reliability with hubs if this is disabled.
 
 #CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
+#CFLAGS += -DENABLE_SAFE_OPTIMIZATIONS
 
 F_CPU = 16000000
 DEVICE = attiny85
@@ -24,7 +24,7 @@ DEVICE = attiny85
 # - How many pages in is that? 6770 / 64 (tiny85 page size in bytes) = 106.xxx
 # - round that down to 106 - our new bootloader address is 106 * 64 = 6784, in hex = 1A80
 # - For data size up to 1408 the address is 1A80 for size from 1409 the address is 1A40
-BOOTLOADER_ADDRESS = 1A80
+BOOTLOADER_ADDRESS = 1AC0
 
 FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
