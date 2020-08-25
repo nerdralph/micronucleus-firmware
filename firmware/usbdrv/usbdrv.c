@@ -99,12 +99,13 @@ PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
 PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     9,          /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
     USBDESCR_CONFIG,    /* descriptor type */
-    18, 0,      /* total length of data returned (including inlined descriptors) */
-    1,          /* number of interfaces in this configuration */
+    9, 0,      /* total length of data returned (including inlined descriptors) */
+    0,          /* number of interfaces in this configuration */
     1,          /* index of this configuration */
     0,          /* configuration name string index */
     (1 << 7),                           /* attributes bus powered */
     USB_CFG_MAX_BUS_POWER/2,            /* max USB current in 2mA units */
+#if 0
 /* interface descriptor follows inline: */
     9,          /* sizeof(usbDescrInterface): length of descriptor in bytes */
     USBDESCR_INTERFACE, /* descriptor type */
@@ -115,6 +116,7 @@ PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration desc
     USB_CFG_INTERFACE_SUBCLASS,
     USB_CFG_INTERFACE_PROTOCOL,
     0,          /* string index for interface */
+#endif
 };
 #endif
 
