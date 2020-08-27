@@ -28,7 +28,7 @@ the output and a memory block to dump in hex ('data' and 'len').
 #endif
 
 /* make sure we have the UART defines: */
-#include "usbportability.h"
+// #include "usbportability.h"
 
 #ifndef uchar
 #   define  uchar   unsigned char

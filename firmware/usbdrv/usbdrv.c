@@ -70,7 +70,8 @@ optimizing hints:
 #if USB_CFG_DESCR_PROPS_DEVICE == 0
 #undef USB_CFG_DESCR_PROPS_DEVICE
 #define USB_CFG_DESCR_PROPS_DEVICE  sizeof(usbDescriptorDevice)
-PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
+//PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
+const __flash char usbDescriptorDevice[] = {    /* USB device descriptor */
     18,         /* sizeof(usbDescriptorDevice): length of descriptor in bytes */
     USBDESCR_DEVICE,        /* descriptor type */
     0x10, 0x01,             /* USB version supported */
@@ -96,7 +97,8 @@ PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
 #if USB_CFG_DESCR_PROPS_CONFIGURATION == 0
 #undef USB_CFG_DESCR_PROPS_CONFIGURATION
 #define USB_CFG_DESCR_PROPS_CONFIGURATION   sizeof(usbDescriptorConfiguration)
-PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
+//PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
+const __flash char usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
     9,          /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
     USBDESCR_CONFIG,    /* descriptor type */
     9, 0,      /* total length of data returned (including inlined descriptors) */

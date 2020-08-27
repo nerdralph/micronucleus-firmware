@@ -102,7 +102,8 @@ extern "C" {
 #endif
 
 #include "usbconfig.h"
-#include "usbportability.h"
+//#include "usbportability.h"
+#include <avr/io.h>
 
 #ifdef __cplusplus
 }
@@ -113,7 +114,7 @@ extern "C" {
 /* --------------------------- Module Interface ---------------------------- */
 /* ------------------------------------------------------------------------- */
 
-#define USBDRV_VERSION  20121206
+#define USBDRV_VERSION  20200827
 /* This define uniquely identifies a driver version. It is a decimal number
  * constructed from the driver's release date in the form YYYYMMDD. If the
  * driver's behavior or interface changes, you can use this constant to
@@ -140,6 +141,8 @@ extern "C" {
 #define schar   signed char
 #endif
 /* shortcuts for well defined 8 bit integer types */
+
+#define USB_READ_FLASH(addr)    (*(const __flash char *)(addr))
 
 #   define usbMsgLen_t uchar
 /* usbMsgLen_t is the data type used for transfer lengths. By default, it is
@@ -285,8 +288,11 @@ extern uchar    usbConfiguration;
  * first.
  */
 
+#else  /* __ASSEMBLER__ */
+#define macro   .macro
+#define endm    .endm
+#define nop2    rjmp    .+0 /* jump to next instruction */
 #endif  /* __ASSEMBLER__ */
-
 
 /* ------------------------------------------------------------------------- */
 /* ----------------- Definitions for Descriptor Properties ----------------- */
@@ -318,16 +324,10 @@ extern uchar    usbConfiguration;
  */
 #ifndef __ASSEMBLER__
 extern
-#if !(USB_CFG_DESCR_PROPS_DEVICE & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-char usbDescriptorDevice[];
+const __flash char usbDescriptorDevice[];
 
 extern
-#if !(USB_CFG_DESCR_PROPS_CONFIGURATION & USB_PROP_IS_RAM)
-PROGMEM const
-#endif
-char usbDescriptorConfiguration[];
+const __flash char usbDescriptorConfiguration[];
 
 #endif /* __ASSEMBLER__ */
 
