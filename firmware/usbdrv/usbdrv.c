@@ -205,23 +205,29 @@ static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
 
     dataPtr[0] = 0; /* default reply common to USBRQ_GET_STATUS and USBRQ_GET_INTERFACE */
     SWITCH_START(rq->bRequest)
+#if 0
     SWITCH_CASE(USBRQ_GET_STATUS)           /* 0 */
         dataPtr[1] = 0;
         len = 2;
+#endif
     SWITCH_CASE(USBRQ_SET_ADDRESS)          /* 5 */
         usbNewDeviceAddr = value;
         USB_SET_ADDRESS_HOOK();
     SWITCH_CASE(USBRQ_GET_DESCRIPTOR)       /* 6 */
         len = usbDriverDescriptor(rq);
         goto skipMsgPtrAssignment;
+#if 0
     SWITCH_CASE(USBRQ_GET_CONFIGURATION)    /* 8 */
         dataPtr = &usbConfiguration;  /* send current configuration value */
         len = 1;
+#endif
     SWITCH_CASE(USBRQ_SET_CONFIGURATION)    /* 9 */
         usbConfiguration = value;
         usbResetStall();
+#if 0
     SWITCH_CASE(USBRQ_GET_INTERFACE)        /* 10 */
         len = 1;
+#endif
     SWITCH_DEFAULT                          /* 7=SET_DESCRIPTOR, 12=SYNC_FRAME */
         /* Should we add an optional hook here? */
     SWITCH_END
