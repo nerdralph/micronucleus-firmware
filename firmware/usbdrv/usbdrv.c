@@ -221,9 +221,11 @@ static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
         dataPtr = &usbConfiguration;  /* send current configuration value */
         len = 1;
 #endif
+#if 0
     SWITCH_CASE(USBRQ_SET_CONFIGURATION)    /* 9 */
         usbConfiguration = value;
         usbResetStall();
+#endif
 #if 0
     SWITCH_CASE(USBRQ_GET_INTERFACE)        /* 10 */
         len = 1;
@@ -265,6 +267,7 @@ usbRequest_t    *rq = (void *)data;
         }else{
             replyLen = usbDriverSetup(rq);
         }
+#if 0
         if(sizeof(replyLen) < sizeof(rq->wLength.word)){ /* help compiler with optimizing */
             if(!rq->wLength.bytes[1] && replyLen > rq->wLength.bytes[0])    /* limit length to max */
                 replyLen = rq->wLength.bytes[0];
@@ -272,6 +275,8 @@ usbRequest_t    *rq = (void *)data;
             if(replyLen > rq->wLength.word)     /* limit length to max */
                 replyLen = rq->wLength.word;
         }
+#endif
+        // with mn, relplies never be > wLength, so no need to check
         usbMsgLen = replyLen;
     }else{  /* usbRxToken must be USBPID_OUT, which means data phase of setup (control-out) */
     }
