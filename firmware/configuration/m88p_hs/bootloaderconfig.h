@@ -68,8 +68,6 @@
 #define USB_INTR_PENDING        PCIFR
 // bit number in above register
 #define USB_INTR_PENDING_BIT    PCIF2
-// interrupt vector
-#define USB_INTR_VECTOR         PCINT2_vect
 
 /* ------------------------------------------------------------------------- */
 /*       Configuration relevant to the CPU the bootloader is running on      */
@@ -248,21 +246,5 @@
   #define LED_EXIT(x)
   #define LED_MACRO(x)
 #endif
-
-/* --------------------------------------------------------------------------- */
-/* Micronucleus internal configuration. Do not change anything below this line */
-/* --------------------------------------------------------------------------- */
-
-// Microcontroller vectortable entries in the flash
-#define RESET_VECTOR_OFFSET         0
-
-// number of bytes before the boot loader vectors to store the tiny application vector table
-#define TINYVECTOR_RESET_OFFSET     4
-#define TINYVECTOR_OSCCAL_OFFSET    6
-
-/* ------------------------------------------------------------------------ */
-// postscript are the few bytes at the end of programmable memory which store tinyVectors
-#define POSTSCRIPT_SIZE 6
-#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 #endif /* __bootloader_h_included__ */
