@@ -35,25 +35,21 @@ DATAx (rx) to ACK/NAK/STALL (tx)                    2   7.5    16-60
 ;Software-receiver engine. Strict timing! Don't change unless you can preserve timing!
 ;interrupt response time: 4 cycles + insn running = 7 max if interrupts always enabled
 ;max allowable interrupt latency: 34 cycles -> max 25 cycles interrupt disable
-;max stack usage: [ret(2), YL, SREG, YH, shift, x1, x2, x3, cnt, x4] = 11 bytes
+;max stack usage: [ret(2), XL, SREG, XH, shift, x1, x2, x3, cnt, x4] = 11 bytes
 ;Numbers in brackets are maximum cycles since SOF.
 USB_INTR_VECTOR:
-;order of registers pushed: YL, SREG [sofError], YH, shift, x1, x2, x3, cnt
-    push    YL              ;2 [35] push only what is necessary to sync with edge ASAP
-    in      YL, SREG        ;1 [37]
-    push    YL              ;2 [39]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
 ;sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;sync up with J to K edge during sync pattern -- use fastest possible loops
 ;The first part waits at most 1 bit long since we must be in sync pattern.
-;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
-;waitForJ, ensure that this prerequisite is met.
+; XL doesn't need to be cleared first since we have 3 chances to sync 
 waitForJ:
-    inc     YL
+    inc     XL
     sbis    USBIN, USBMINUS
     brne    waitForJ        ; just make sure we have ANY timeout
+    nop
 waitForK:
 ;The following code results in a sampling window of 1/4 bit which meets the spec.
     sbis    USBIN, USBMINUS
@@ -64,37 +60,38 @@ waitForK:
     rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
-    sbis    USBIN, USBMINUS
-    rjmp    foundK
+;    sbis    USBIN, USBMINUS
+;    rjmp    foundK
     rjmp    sofError
 foundK:
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 4 for center sampling]
 ;we have 1 bit time for setup purposes, then sample again. Numbers in brackets
 ;are cycles from center of first sync (double K) bit after the instruction
-    push    YH                  ;2 [2]
-    lds     YL, usbInputBufOffset;2 [4]
-    clr     YH                  ;1 [5]
-    subi    YL, lo8(-(usbRxBuf));1 [6]
-    sbci    YH, hi8(-(usbRxBuf));1 [7]
+; we get here 3-5 cycles after D- went low
+    rcall   return          ;7 [7]
+    ldi     XL, lo8(usbRxBuf); [8] [rx loop init]
+    ldi     XH, hi8(usbRxBuf); [9] [rx loop init]
 
-    sbis    USBIN, USBMINUS ;1 [8] we want two bits K [sample 1 cycle too early]
-    rjmp    haveTwoBitsK    ;2 [10]
-    pop     YH              ;2 [11] undo the push from before
-    rjmp    waitForK        ;2 [13] this was not the end of sync, retry
+    sbic    USBIN, USBMINUS ;1/2 [10/11] sample for 2 K bits
+    rjmp    waitForK        ;2 [12] this was not the end of sync, retry
 haveTwoBitsK:
 ;----------------------------------------------------------------------------
 ; push more registers and initialize values while we sample the first bits:
 ;----------------------------------------------------------------------------
-    push    shift           ;2 [16]
-    push    x1              ;2 [12]
-    push    x2              ;2 [14]
+    ;push    shift           ;2 [12]
+    ;push    x1              ;2 [14]
+    ;push    x2              ;2 [16]
+    nop2                    ;2 [13]
+    lpm     r0, Z           ;3 [16]
 
     in      x1, USBIN       ;1 [17] <-- sample bit 0
     ldi     shift, 0xff     ;1 [18]
     bst     x1, USBMINUS    ;1 [19]
     bld     shift, 0        ;1 [20]
-    push    x3              ;2 [22]
-    push    cnt             ;2 [24]
+    ;push    x3              ;2 [22]
+    ;push    cnt             ;2 [24]
+    nop2                    ;2 [22]
+    nop2                    ;2 [24]
 
     in      x2, USBIN       ;1 [25] <-- sample bit 1
     ser     x3              ;1 [26] [inserted init instruction]
@@ -167,7 +164,7 @@ unstuff6:               ;1 (branch taken)
 rxLoop:
     eor     x3, shift   ;1 [0] reconstruct: x3 is 0 at bit locations we changed, 1 at others
     in      x1, USBIN   ;1 [1] <-- sample bit 0
-    st      y+, x3      ;2 [3] store data
+    st      x+, x3      ;2 [3] store data
     ser     x3          ;1 [4]
     nop                 ;1 [5]
     eor     x2, x1      ;1 [6]
@@ -241,17 +238,17 @@ unstuff7:
     rjmp    didUnstuff7 ;2 [68]
 
 macro POP_STANDARD ; 12 cycles
-    pop     cnt
-    pop     x3
-    pop     x2
-    pop     x1
-    pop     shift
-    pop     YH
+#    pop     cnt
+#    pop     x3
+#    pop     x2
+#    pop     x1
+#    pop     shift
+#    pop     XH
     endm
 macro POP_RETI     ; 5 cycles
-    pop     YL
-    out     SREG, YL
-    pop     YL
+#    pop     XL
+#    out     SREG, XL
+#    pop     XL
     endm
 
 #include "asmcommon.inc"
@@ -280,8 +277,8 @@ sendAckAndReti:                 ;0 [-19] 19 cycles until SOP
 sendCntAndReti:                 ;0 [-17] 17 cycles until SOP
     mov     x3, cnt             ;1 [-16]
 usbSendX3:                      ;0 [-16]
-    ldi     YL, 20              ;1 [-15] 'x3' is R20
-    ldi     YH, 0               ;1 [-14]
+    ldi     XL, 20              ;1 [-15] 'x3' is R20
+    ldi     XH, 0               ;1 [-14]
     ldi     cnt, 2              ;1 [-13]
 ;   rjmp    usbSendAndReti      fallthrough
 
@@ -350,7 +347,7 @@ doExor7:
     eor     x1, x2              ;[51] [59]
     ldi     x4, 6               ;[52]
 common7:
-    ld      shift, y+           ;[53]
+    ld      shift, x+           ;[53]
     tst     cnt                 ;[55]
     out     USBOUT, x1          ;[56] <--- set bit
     brne    txByteLoop          ;[57]
@@ -359,8 +356,8 @@ common7:
     cbr     x1, USBMASK         ;[58] prepare SE0 [spec says EOP may be 15 to 18 cycles]
     lds     x2, usbNewDeviceAddr;[59]
     lsl     x2                  ;[61] we compare with left shifted address
-    subi    YL, 2 + 20          ;[62] Only assign address on data packets, not ACK/NAK in x3
-    sbci    YH, 0               ;[63]
+    subi    XL, 2 + 20          ;[62] Only assign address on data packets, not ACK/NAK in x3
+    sbci    XH, 0               ;[63]
     out     USBOUT, x1          ;[00] <-- out SE0 -- from now 2 bits = 16 cycles until bus idle
 ;2006-03-06: moved transfer of new address to usbDeviceAddr from C-Code to asm:
 ;set address only after data packet was sent, not after handshake
@@ -381,4 +378,6 @@ skipAddrAssign:
     out     USBOUT, x1          ;[16] <-- out J (idle) -- end of SE0 (EOP signal)
     out     USBDDR, x2          ;[17] <-- release bus now
     out     USBOUT, x3          ;[18] <-- ensure no pull-up resistors are active
-    rjmp    doReturn
+return:
+    ret
+;    rjmp    doReturn
