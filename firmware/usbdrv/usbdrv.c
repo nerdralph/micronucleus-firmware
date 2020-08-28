@@ -243,7 +243,7 @@ usbRequest_t    *rq = (void *)data;
 #endif
         usbMsgLen_t replyLen;
         usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
-        usbTxLen = USBPID_NAK;              /* abort pending transmit */
+        //usbTxLen = USBPID_NAK;              /* abort pending transmit */
         uchar type = rq->bmRequestType & USBRQ_TYPE_MASK;
         if(type != USBRQ_TYPE_STANDARD){    /* standard requests are handled by driver */
             replyLen = usbFunctionSetup(data); // for USBRQ_TYPE_CLASS or USBRQ_TYPE_VENDOR
@@ -294,7 +294,7 @@ static uchar usbDeviceRead(uchar *data, uchar len)
 /* usbBuildTxBlock() is called when we have data to transmit and the
  * interrupt routine's transmit buffer is empty.
  */
-static inline void usbBuildTxBlock(void)
+static void usbBuildTxBlock(void)
 {
 usbMsgLen_t wantLen;
 uchar       len;
