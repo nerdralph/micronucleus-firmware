@@ -207,39 +207,15 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
 static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
 {
     usbMsgLen_t len = 0;
-    // uchar   *dataPtr = usbTxBuf + 9;    /* there are 2 bytes free space at the end of the buffer */
-    uchar   value = rq->wValue.bytes[0];
 
-    // dataPtr[0] = 0; /* default reply common to USBRQ_GET_STATUS and USBRQ_GET_INTERFACE */
     SWITCH_START(rq->bRequest)
-#if 0
-    SWITCH_CASE(USBRQ_GET_STATUS)           /* 0 */
-        dataPtr[1] = 0;
-        len = 2;
-#endif
     SWITCH_CASE(USBRQ_SET_ADDRESS)          /* 5 */
-        usbNewDeviceAddr = value;
+        usbNewDeviceAddr = rq->wValue.bytes[0];
     SWITCH_CASE(USBRQ_GET_DESCRIPTOR)       /* 6 */
         len = usbDriverDescriptor(rq);
-        //goto skipMsgPtrAssignment;
-#if 0
-    SWITCH_CASE(USBRQ_GET_CONFIGURATION)    /* 8 */
-        dataPtr = &usbConfiguration;  /* send current configuration value */
-        len = 1;
-#endif
-#if 0
-    SWITCH_CASE(USBRQ_SET_CONFIGURATION)    /* 9 */
-        usbConfiguration = value;
-        usbResetStall();
-#endif
-#if 0
-    SWITCH_CASE(USBRQ_GET_INTERFACE)        /* 10 */
-        len = 1;
-#endif
-    SWITCH_DEFAULT                          /* 7=SET_DESCRIPTOR, 12=SYNC_FRAME */
+    SWITCH_DEFAULT
     SWITCH_END
-    //usbMsgPtr = (usbMsgPtr_t)dataPtr;
-//skipMsgPtrAssignment:
+
     return len;
 }
 
@@ -261,8 +237,10 @@ usbRequest_t    *rq = (void *)data;
     DBG2(0x10 + (usbRxToken & 0xf), data, len + 2); /* SETUP=1d, SETUP-DATA=11, OUTx=1x */
     USB_RX_USER_HOOK(data, len)
     if(usbRxToken == (uchar)USBPID_SETUP){
+#if 0
         if(len != 8)    /* Setup size must be always 8 bytes. Ignore otherwise. */
             return;
+#endif
         usbMsgLen_t replyLen;
         usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
         usbTxLen = USBPID_NAK;              /* abort pending transmit */
@@ -340,23 +318,6 @@ uchar       len;
     DBG2(0x20, usbTxBuf, len-1);
 }
 
-/* ------------------------------------------------------------------------- */
-
-#ifdef USB_RESET_HOOK
-static inline void usbHandleResetHook(uchar notResetState)
-{
-
-static uchar    wasReset;
-uchar           isReset = !notResetState;
-
-    if(wasReset != isReset){
-        USB_RESET_HOOK(isReset);
-        wasReset = isReset;
-    }
-}
-#else
-//    notResetState = notResetState;  // avoid compiler warning -> leads to another warning :-(
-#endif
 /* ------------------------------------------------------------------------- */
 // Replaced for micronucleus V2
 //USB_PUBLIC void usbPoll(void)
