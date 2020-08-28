@@ -158,9 +158,6 @@ static inline void  usbResetStall(void)
 #ifndef USB_RX_USER_HOOK
 #define USB_RX_USER_HOOK(data, len)
 #endif
-#ifndef USB_SET_ADDRESS_HOOK
-#define USB_SET_ADDRESS_HOOK()
-#endif
 
 /* ------------------------------------------------------------------------- */
 
@@ -182,7 +179,6 @@ static inline void  usbResetStall(void)
 static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
 {
     usbMsgLen_t len = 0;
-
     SWITCH_START(rq->wValue.bytes[1])
     SWITCH_CASE(USBDESCR_DEVICE)    /* 1 */
         GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_DEVICE, usbDescriptorDevice)
@@ -190,6 +186,15 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
         GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_CONFIGURATION, usbDescriptorConfiguration)
     SWITCH_DEFAULT
     SWITCH_END
+
+#if 0
+    // could use if instead of SWITCH_ macros for readability
+    uint8_t wValue1 = rq->wValue.bytes[1];
+    if (wValue1 == USBDESCR_DEVICE)     // 1
+        GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_DEVICE, usbDescriptorDevice)
+    if (wValue1 == USBDESCR_CONFIG)     // 2
+        GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_CONFIGURATION, usbDescriptorConfiguration)
+#endif
 
     return len;
 }
@@ -202,10 +207,10 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
 static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
 {
     usbMsgLen_t len = 0;
-    uchar   *dataPtr = usbTxBuf + 9;    /* there are 2 bytes free space at the end of the buffer */
+    // uchar   *dataPtr = usbTxBuf + 9;    /* there are 2 bytes free space at the end of the buffer */
     uchar   value = rq->wValue.bytes[0];
 
-    dataPtr[0] = 0; /* default reply common to USBRQ_GET_STATUS and USBRQ_GET_INTERFACE */
+    // dataPtr[0] = 0; /* default reply common to USBRQ_GET_STATUS and USBRQ_GET_INTERFACE */
     SWITCH_START(rq->bRequest)
 #if 0
     SWITCH_CASE(USBRQ_GET_STATUS)           /* 0 */
@@ -214,10 +219,9 @@ static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
 #endif
     SWITCH_CASE(USBRQ_SET_ADDRESS)          /* 5 */
         usbNewDeviceAddr = value;
-        USB_SET_ADDRESS_HOOK();
     SWITCH_CASE(USBRQ_GET_DESCRIPTOR)       /* 6 */
         len = usbDriverDescriptor(rq);
-        goto skipMsgPtrAssignment;
+        //goto skipMsgPtrAssignment;
 #if 0
     SWITCH_CASE(USBRQ_GET_CONFIGURATION)    /* 8 */
         dataPtr = &usbConfiguration;  /* send current configuration value */
@@ -233,10 +237,9 @@ static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
         len = 1;
 #endif
     SWITCH_DEFAULT                          /* 7=SET_DESCRIPTOR, 12=SYNC_FRAME */
-        /* Should we add an optional hook here? */
     SWITCH_END
-    usbMsgPtr = (usbMsgPtr_t)dataPtr;
-skipMsgPtrAssignment:
+    //usbMsgPtr = (usbMsgPtr_t)dataPtr;
+//skipMsgPtrAssignment:
     return len;
 }
 
@@ -295,11 +298,15 @@ static uchar usbDeviceRead(uchar *data, uchar len)
         uchar i = len;
         usbMsgPtr_t r = usbMsgPtr;
         do{
-            uchar c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
+            // this compiles to lpm rN, Z+ $ st X+, rN
+            uchar c = USB_READ_FLASH(r);
             *data++ = c;
             r++;
+            // neither of the following generate lpm Z+
+            //*data++ = USB_READ_FLASH(r++);
+            //*data++ = *r++;
         }while(--i);
-        usbMsgPtr = r;
+        usbMsgPtr = (usbMsgPtr_t)r;
     }
     return len;
 }
