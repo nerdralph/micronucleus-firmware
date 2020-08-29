@@ -39,6 +39,8 @@ the file appropriate for the given clock rate.
     .global USB_INTR_VECTOR
     .type   USB_INTR_VECTOR, @function
     .global usbCrc16Append
+    .global usbProcessRx
+    .global usbFunctionSetup            ; in main.c 
 
 #if USB_INTR_PENDING < 0x40 /* This is an I/O address, use in and out */
 #   define  USB_LOAD_PENDING(reg)   in reg, USB_INTR_PENDING
@@ -53,6 +55,60 @@ the file appropriate for the given clock rate.
 #define usbTxLen3   usbTxStatus3
 #define usbTxBuf3   (usbTxStatus3 + 1)
 
+#if 1
+.equ o_bmRequestType, 0
+.equ o_bRequest,    1
+.equ o_wValue,      2
+.equ o_wIndex,      4
+
+; void usbProcessRx(uchar *rq, uchar len)
+; r25:24 = data, r22 = len
+#define rxToken r23
+usbProcessRx:
+    lds rxToken, usbRxToken
+    cpi rxToken, USBPID_SETUP
+    brne done
+    ldi r18, USBPID_DATA0               ; setup data toggling 
+    sts usbTxBuf, r18
+    movw ZL, r24
+
+    ldd r18, Z+o_bmRequestType
+    andi r18, USBRQ_TYPE_MASK
+    cpi r18, USBRQ_TYPE_STANDARD
+    breq rq_std
+    ; for USBRQ_TYPE_CLASS or USBRQ_TYPE_VENDOR 
+    rcall usbFunctionSetup
+    rjmp saveLen
+rq_std:
+    ; handle driver requests
+    clr r24                             ; default length
+    ldd r18, Z+o_bRequest
+    cpi r18, USBRQ_SET_ADDRESS          ; 5
+    brne 1f
+    ldd r19, Z+o_wValue
+    sts usbNewDeviceAddr, r19
+1:  cpi r18, USBRQ_GET_DESCRIPTOR       ; 
+    ldd r19, Z+o_wValue + 1             ; descriptor type
+    cpi r19, USBDESCR_DEVICE
+    brne 2f
+    ldi r20, lo8(usbDescriptorDevice)
+    ldi r21, hi8(usbDescriptorDevice)
+    ldi r24, 18                         ; length
+    rjmp setMsgPtr
+2:  cpi r19, USBDESCR_CONFIG
+    brne saveLen
+    ldi r20, lo8(usbDescriptorConfiguration)
+    ldi r21, hi8(usbDescriptorConfiguration)
+    ldi r24, 9                          ; length
+setMsgPtr:
+    sts usbMsgPtr, r20
+    sts usbMsgPtr+1, r21
+
+saveLen:
+    sts usbMsgLen, r24
+done:
+ret
+#endif
 
 ;----------------------------------------------------------------------------
 ; Utility functions

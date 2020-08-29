@@ -26,7 +26,7 @@
  */
 
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 5 // 165 (0xA5) is shown in W10 Device manager in BCD but as :5 instead of A5
+#define MICRONUCLEUS_VERSION_MINOR 42
 
 #define RECONNECT_DELAY_MILLIS 300 // Time between disconnect and connect. Even 250 is to fast!
 #define __DELAY_BACKWARD_COMPATIBLE__ // Saves 2 bytes at _delay_ms(). Must be declared before the include util/delay.h
@@ -91,11 +91,15 @@
 //   Byte 4:  SIGNATURE_1
 //   Byte 5:  SIGNATURE_2
 
-PROGMEM const uint8_t configurationReply[6] = { (((uint16_t) PROGMEM_SIZE) >> 8) & 0xff, ((uint16_t) PROGMEM_SIZE) & 0xff,
-SPM_PAGESIZE,
-MICRONUCLEUS_WRITE_SLEEP,
-SIGNATURE_1,
-SIGNATURE_2 };
+//PROGMEM const uint8_t configurationReply[6] = {
+const __flash uint8_t configurationReply[6] = {
+    (((uint16_t) PROGMEM_SIZE) >> 8) & 0xff,
+    ((uint16_t) PROGMEM_SIZE) & 0xff,
+    SPM_PAGESIZE,
+    MICRONUCLEUS_WRITE_SLEEP,
+    SIGNATURE_1,
+    SIGNATURE_2 
+};
 
 typedef union {
     uint16_t w;
@@ -125,7 +129,6 @@ register uint8_t sLoopCommand asm("r3");  // bind sLoopCommand to r3
 static inline void eraseApplication(void);
 static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
-static uint8_t usbFunctionSetup(uint8_t data[8]);
 static inline void leaveBootloader(void);
 void blinkLED(uint8_t aBlinkCount);
 
@@ -232,7 +235,8 @@ static void writeWordToPageBuffer(uint16_t data) {
  * Prepares variables and sets sLoopCommand for command to be executed in the main loop
  *
  */
-static uint8_t usbFunctionSetup(uint8_t data[8]) {
+//static uint8_t usbFunctionSetup(uint8_t data[8]) {
+uint8_t usbFunctionSetup(uint8_t data[8]) {
     usbRequest_t *rq = (void *) data;
 
     idlePolls.b[1] = 0; // reset high byte of idle counter when we get usb class or vendor requests to start a new timeout
@@ -278,6 +282,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
  * Shortest watchdog timeout is 16 ms.
  */
 static void inactivateWatchdog(void) {
+#ifdef DISABLE_WDOG
 #ifdef CCP
     // New ATtinies841/441 use a different unlock sequence and renamed registers
     CCP = 0xD8;
@@ -289,6 +294,7 @@ static void inactivateWatchdog(void) {
     wdt_reset();
     WDTCSR |= _BV(WDCE) | _BV(WDE);
     WDTCSR=0;
+#endif
 #endif
 }
 

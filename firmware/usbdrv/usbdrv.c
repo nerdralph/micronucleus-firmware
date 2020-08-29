@@ -50,7 +50,8 @@ uchar       usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbT
 /* USB status registers / not shared with asm code */
 usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM address */
 #ifdef MNHACK_NO_DATASECTION
-  static usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
+// static usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
+  usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
 #else
   static usbMsgLen_t  usbMsgLen = USB_NO_MSG; /* remaining number of bytes */
 #endif
@@ -155,10 +156,6 @@ static inline void  usbResetStall(void)
 #   define SWITCH_END              }}
 #endif
 
-#ifndef USB_RX_USER_HOOK
-#define USB_RX_USER_HOOK(data, len)
-#endif
-
 /* ------------------------------------------------------------------------- */
 
 /* We use if() instead of #if in the macro below because #if can't be used
@@ -221,11 +218,13 @@ static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
 
 /* ------------------------------------------------------------------------- */
 
+// now in usbdrvasm.S
+extern void usbProcessRx(uchar *data, uchar len);
 /* usbProcessRx() is called for every message received by the interrupt
  * routine. It distinguishes between SETUP and DATA packets and processes
  * them accordingly.
  */
-static inline void usbProcessRx(uchar *data, uchar len)
+static inline void usbProcessRx_old(uchar *data, uchar len)
 {
 usbRequest_t    *rq = (void *)data;
 
@@ -235,7 +234,6 @@ usbRequest_t    *rq = (void *)data;
  * 0...0x0f for OUT on endpoint X
  */
     DBG2(0x10 + (usbRxToken & 0xf), data, len + 2); /* SETUP=1d, SETUP-DATA=11, OUTx=1x */
-    USB_RX_USER_HOOK(data, len)
     if(usbRxToken == (uchar)USBPID_SETUP){
 #if 0
         if(len != 8)    /* Setup size must be always 8 bytes. Ignore otherwise. */
