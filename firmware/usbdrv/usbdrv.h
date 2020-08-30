@@ -177,19 +177,12 @@ USB_PUBLIC void usbInit(void);
  * Please note that debug outputs through the UART take ~ 0.5ms per byte
  * at 19200 bps.
  */
+
 extern usbMsgPtr_t usbMsgPtr;
 /* This variable may be used to pass transmit data to the driver from the
  * implementation of usbFunctionWrite(). It is also used internally by the
  * driver for standard control requests.
  */
-
-extern uchar usbMsgFlags;    /* flag values see USB_FLG_* */
-/* Can be set to `USB_FLG_MSGPTR_IS_ROM` in `usbFunctionSetup()` 
- * if `usbMsgPtr` has been set to a flash memory
- * address.
- */
-
-#define USB_FLG_MSGPTR_IS_ROM   (1<<6)
 
 // USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
 usbMsgLen_t usbFunctionSetup(uchar data[8]);

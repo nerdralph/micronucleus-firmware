@@ -40,6 +40,7 @@ the file appropriate for the given clock rate.
     .type   USB_INTR_VECTOR, @function
     .global usbCrc16Append
     .global usbProcessRx
+    .global usbBuildTxBlock
     .global usbFunctionSetup            ; in main.c 
 
 #if USB_INTR_PENDING < 0x40 /* This is an I/O address, use in and out */
@@ -55,7 +56,6 @@ the file appropriate for the given clock rate.
 #define usbTxLen3   usbTxStatus3
 #define usbTxBuf3   (usbTxStatus3 + 1)
 
-#if 1
 .equ o_bmRequestType, 0
 .equ o_bRequest,    1
 .equ o_wValue,      2
@@ -87,7 +87,8 @@ rq_std:
     brne 1f
     ldd r19, Z+o_wValue
     sts usbNewDeviceAddr, r19
-1:  cpi r18, USBRQ_GET_DESCRIPTOR       ; 
+1:  cpi r18, USBRQ_GET_DESCRIPTOR
+    brne setMsgPtr
     ldd r19, Z+o_wValue + 1             ; descriptor type
     cpi r19, USBDESCR_DEVICE
     brne 2f
@@ -101,12 +102,33 @@ rq_std:
     ldi r21, hi8(usbDescriptorConfiguration)
     ldi r24, 9                          ; length
 setMsgPtr:
-    sts usbMsgPtr, r20
-    sts usbMsgPtr+1, r21
+    ;sts usbMsgPtr, r20
+    ;sts usbMsgPtr+1, r21
+    movw r8, r20                        ; r8 fixed usbMsgPtr
 
 saveLen:
     sts usbMsgLen, r24
 done:
+ret
+#undef rxToken
+
+#if 0
+; void usbBuildTxBlock(void)
+#define wantLen r25 
+uBuildTxBlock:
+    lds wantLen, usbMsgLen
+    mov r0, wantLen
+    cpi wantLen, 8                      ; 8 bytes max data packet
+    brlo 1f
+    ldi wantLen, 8
+1:  sub r0, wantLen
+    sts usbMsgLen, r0
+
+    ; read Tx data from flash
+    ldi XL, lo8(usbTxBuf + 1)
+    ldi XL, hi8(usbTxBuf + 1)
+    ldi ZL, lo8(usbMsgBuf + 1)
+    ldi ZL, hi8(usbMsgBuf + 1)
 ret
 #endif
 
@@ -118,8 +140,10 @@ ret
 /* Calling conventions on gcc:
  * First parameter passed in r24/r25, second in r22/23 and so on.
  * Callee must preserve r1-r17, r28/r29
- * Result is passed in r24/r25
  */
+; size optimized CRC
+; extern unsigned usbCrc16(unsigned char *argPtr, unsigned char argLen);
+; note: argLen can be zero!
 #   define argLen   r22 /* argument 2 */
 #   define argPtrL  r24 /* argument 1 */
 #   define argPtrH  r25 /* argument 1 */
@@ -127,6 +151,7 @@ ret
 #   define resCrcL  r24 /* result */
 #   define resCrcH  r25 /* result */
 
+; temp variables
 #   define ptrL     XL
 #   define ptrH     XH
 #   define ptr      x
@@ -136,20 +161,9 @@ ret
 #   define polyH    r21
 #   define scratch  r23
 
-; size optimized CRC
-; extern unsigned usbCrc16(unsigned char *argPtr, unsigned char argLen);
-;   argPtr  r24+25
-;   argLen  r22
-; temp variables:
-;   byte    r18
-;   bitCnt  r19
-;   poly    r20+r21
-;   scratch r23
-;   resCrc  r24+r25
-;   ptr     X
-; could use X for argPtr to avoid movw instr
 usbCrc16Append:
     movw    ptrL, argPtrL
+crc16Direct:                            ; ptr arg in X
     ldi     resCrcL, 0
     ldi     resCrcH, 0
     ldi     polyL, lo8(0xa001)
@@ -160,6 +174,7 @@ usbCrc16Append:
 usbCrcByteLoop:
     ld      byte, ptr+
     eor     resCrcL, byte
+;    sec
 usbCrcBitLoop:
     ror     resCrcH     ; carry is always set here (see brcs jumps to here)
     ror     resCrcL
@@ -172,6 +187,8 @@ usbCrcNoXor:
 usbCrcLoopEntry:
     subi    argLen, -1
     brcs    usbCrcByteLoop
+;    subi    argLen, 1
+;    brne    usbCrcByteLoop
     st      ptr+, resCrcL
     st      ptr+, resCrcH
     ret
@@ -189,7 +206,6 @@ usbCrcLoopEntry:
 #undef bitCnt
 #undef polyL
 #undef polyH
-#undef scratch
 
 
 ;----------------------------------------------------------------------------

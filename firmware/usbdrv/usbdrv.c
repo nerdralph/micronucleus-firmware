@@ -32,8 +32,7 @@ documentation of the entire driver.
 /* ------------------------------------------------------------------------- */
 
 /* raw USB registers / interface to assembler code: */
-uchar usbRxBuf[2*USB_BUFSIZE];  /* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
-// uchar       usbInputBufOffset;  /* offset in usbRxBuf used for low level receiving */
+uchar usbRxBuf[USB_BUFSIZE];  /* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
 uchar       usbDeviceAddr;      /* assigned during enumeration, defaults to 0 */
 uchar       usbNewDeviceAddr;   /* device ID which should be set after status phase */
 uchar       usbConfiguration;   /* currently selected configuration. Administered by driver, but not used */
@@ -47,8 +46,10 @@ uchar       usbRxToken;         /* token for data we received; or endpont number
 #endif
 uchar       usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbTxLen contains handshake token */
 
+//usbMsgPtr_t         usbMsgPtr;      /* data to tx next -- flash address */
+register usbMsgPtr_t         usbMsgPtr asm("r8");      /* data to tx next -- flash address */
+
 /* USB status registers / not shared with asm code */
-usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM address */
 #ifdef MNHACK_NO_DATASECTION
 // static usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
   usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
@@ -303,15 +304,17 @@ uchar       len;
     usbMsgLen -= wantLen;
     usbTxBuf[0] ^= USBPID_DATA0 ^ USBPID_DATA1; /* DATA toggling */
     len = usbDeviceRead(usbTxBuf + 1, wantLen);
-    if(len <= 8){           /* valid data packet */
+    //if(len <= 8){           /* valid data packet */
         usbCrc16Append(&usbTxBuf[1], len);
         len += 4;           /* length including sync byte */
         if(len < 12)        /* a partial package identifies end of message */
             usbMsgLen = USB_NO_MSG;
+#if 0
     }else{
         len = USBPID_STALL;   /* stall the endpoint */
         usbMsgLen = USB_NO_MSG;
     }
+#endif
     usbTxLen = len;
     DBG2(0x20, usbTxBuf, len-1);
 }

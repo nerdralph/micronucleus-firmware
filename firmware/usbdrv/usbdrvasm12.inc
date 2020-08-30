@@ -289,7 +289,7 @@ usbSendX3:                      ;0 [-16]
 ; Spec allows 7.5 bit times from EOP to SOP for replies (= 60 cycles)
 
 ;usbSend:
-;pointer to data in 'Y'
+;pointer to data in 'X'
 ;number of bytes in 'cnt' -- including sync byte
 ;uses: x1...x2, x4, shift, cnt, Y [x1 = mirror USBOUT, x2 = USBMASK, x4 = bitstuff cnt]
 ;Numbers in brackets are time since first bit of sync pattern is sent (start of instruction)

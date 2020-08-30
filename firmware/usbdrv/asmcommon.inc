@@ -61,15 +61,13 @@ se0:
     sbci    XH, 0               ;[8]
     ldi     x2, 1<<USB_INTR_PENDING_BIT ;[9]
     USB_STORE_PENDING(x2)       ;[10] clear pending intr and check flag later. SE0 should be over.
-;    ld      token, y            ;[11]
     ld      token, x+            ;[11]
     cpi     token, USBPID_DATA0 ;[13]
     breq    handleData          ;[14]
     cpi     token, USBPID_DATA1 ;[15]
     breq    handleData          ;[16]
     lds     shift, usbDeviceAddr;[17]
-;    ldd     x2, y+1             ;[19] ADDR and 1 bit endpoint number
-    ld     x2, x             ;[19] ADDR and 1 bit endpoint number
+    ld      x2, x               ;[19] ADDR and 1 bit endpoint number
     lsl     x2                  ;[21] shift out 1 bit endpoint number
     cpse    x2, shift           ;[22]
     rjmp    ignorePacket        ;[23]

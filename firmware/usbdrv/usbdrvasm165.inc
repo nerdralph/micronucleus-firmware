@@ -37,18 +37,13 @@ of CPU cycles, but even an exact number of cycles!
 
 
 USB_INTR_VECTOR:
-;order of registers pushed: XL, SREG [sofError], r0, XH, shift, x1, x2, x3, x4, cnt
-#    push    XL                  ;[-23] push only what is necessary to sync with edge ASAP
-#    in      XL, SREG            ;[-21]
-#    push    XL                  ;[-20]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
 ;sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;sync up with J to K edge during sync pattern -- use fastest possible loops
 ;The first part waits at most 1 bit long since we must be in sync pattern.
-;XL is guarenteed to be < 0x80 because I flag is clear. When we jump to
-;waitForJ, ensure that this prerequisite is met.
+; XL doesn't need to be cleared first since we have 3 chances to sync 
 waitForJ:
     inc     XL
     sbis    USBIN, USBMINUS
