@@ -111,14 +111,17 @@ handleData:
     lds     shift, usbCurrentTok;[18]
     tst     shift               ;[20]
     breq    doReturn            ;[21]
-    lds     x2, usbRxLen        ;[22]
-    tst     x2                  ;[24]
+    ;lds     x2, usbRxLen        ;[22]
+    ;tst     x2                  ;[24]
+    ; r10 = usbRxLen, need to update cycle count
+    tst     r10                  ;[24]
     brne    sendNakAndReti      ;[25]
 ; 2006-03-11: The following two lines fix a problem where the device was not
 ; recognized if usbPoll() was called less frequently than once every 4 ms.
     cpi     cnt, 4              ;[26] zero sized data packets are status phase only -- ignore and ack
     brmi    sendAckAndReti      ;[27] keep rx buffer clean -- we must not NAK next SETUP
-    sts     usbRxLen, cnt       ;[28] store received data, swap buffers
+    ;sts     usbRxLen, cnt       ;[28] store received data, swap buffers
+    mov     r10, cnt            ;[28] store received data
     sts     usbRxToken, shift   ;[30]
 
 ; Microncleus V2 does not need double buffering due to in-order processing of USB-rx
@@ -134,14 +137,18 @@ handleIn:
 ;We don't send any data as long as the C code has not processed the current
 ;input data and potentially updated the output data. That's more efficient
 ;in terms of code size than clearing the tx buffers when a packet is received.
-    lds     x1, usbRxLen        ;[30]
+    ;lds     x1, usbRxLen        ;[30]
+    mov     x1, r10
     cpi     x1, 1               ;[32] negative values are flow control, 0 means "buffer free"
     brge    sendNakAndReti      ;[33] unprocessed input packet?
     ldi     x1, USBPID_NAK      ;[34] prepare value for usbTxLen
     lds     cnt, usbTxLen       ;[37]
     sbrc    cnt, 4              ;[39] all handshake tokens have bit 4 set
+    ; r17 is usbTxLen
+    ;sbrc    r17, 4              ;[39] all handshake tokens have bit 4 set
     rjmp    sendCntAndReti      ;[40] 42 + 16 = 58 until SOP
     sts     usbTxLen, x1        ;[41] x1 == USBPID_NAK from above
+    ;ldi     r17, USBPID_NAK     ;[41] - todo: update cycle count
     ldi     XL, lo8(usbTxBuf)   ;[43]
     ldi     XH, hi8(usbTxBuf)   ;[44]
     rjmp    usbSendAndReti      ;[45] 57 + 12 = 59 until SOP
