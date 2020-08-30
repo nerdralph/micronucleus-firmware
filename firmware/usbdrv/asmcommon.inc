@@ -141,14 +141,14 @@ handleIn:
     mov     x1, r10
     cpi     x1, 1               ;[32] negative values are flow control, 0 means "buffer free"
     brge    sendNakAndReti      ;[33] unprocessed input packet?
-    ldi     x1, USBPID_NAK      ;[34] prepare value for usbTxLen
-    lds     cnt, usbTxLen       ;[37]
-    sbrc    cnt, 4              ;[39] all handshake tokens have bit 4 set
+    ;ldi     x1, USBPID_NAK      ;[34] prepare value for usbTxLen
+    ;lds     cnt, usbTxLen       ;[37]
     ; r17 is usbTxLen
-    ;sbrc    r17, 4              ;[39] all handshake tokens have bit 4 set
+    mov     cnt, r17
+    sbrc    cnt, 4              ;[39] all handshake tokens have bit 4 set
     rjmp    sendCntAndReti      ;[40] 42 + 16 = 58 until SOP
-    sts     usbTxLen, x1        ;[41] x1 == USBPID_NAK from above
-    ;ldi     r17, USBPID_NAK     ;[41] - todo: update cycle count
+    ; sts     usbTxLen, x1        ;[41] x1 == USBPID_NAK from above
+    ldi     r17, USBPID_NAK     ;[41] - todo: update cycle count
     ldi     XL, lo8(usbTxBuf)   ;[43]
     ldi     XH, hi8(usbTxBuf)   ;[44]
     rjmp    usbSendAndReti      ;[45] 57 + 12 = 59 until SOP
