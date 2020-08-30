@@ -15,7 +15,6 @@ the file appropriate for the given clock rate.
 */
 
 #define __SFR_OFFSET 0      /* used by avr-libc's register definitions */
-// #include "usbportability.h"
 #include "usbdrv.h"         /* for common defs */
 
 /* register names */
@@ -104,33 +103,62 @@ rq_std:
 setMsgPtr:
     ;sts usbMsgPtr, r20
     ;sts usbMsgPtr+1, r21
-    movw r8, r20                        ; r8 fixed usbMsgPtr
+    movw usbMsgPtrReg, r20              ; fixed register for usbMsgPtr
 
 saveLen:
     ;sts usbMsgLen, r24
-    mov r16, r24                        ; r8 fixed usbMsgLen
+    mov usbMsgLenReg, r24               ; fixed register for usbMsgLen
 done:
 ret
 #undef rxToken
 
-#if 0
+#if 1
 ; void usbBuildTxBlock(void)
-#define wantLen r25 
-uBuildTxBlock:
-    lds wantLen, usbMsgLen
-    mov r0, wantLen
-    cpi wantLen, 8                      ; 8 bytes max data packet
+#define scratch r18
+#define txBytes r19
+usbBuildTxBlock:
+    ; transmit at most 8 bytes at a time
+    mov txBytes, usbMsgLenReg
+    cpi usbMsgLenReg, 8                 ; 8 bytes max data packet
     brlo 1f
-    ldi wantLen, 8
-1:  sub r0, wantLen
-    sts usbMsgLen, r0
+    ldi txBytes, 8
+    sub usbMsgLenReg, txBytes
+    rjmp 2f
+    ; usbMsgLen = USB_NO_MSG only txbytes < 7
+1:  ldi usbMsgLenReg, -1                ; USB_NO_MSG = -1
+2:
+    ldi XL, lo8(usbTxBuf)
+    ldi XH, hi8(usbTxBuf)
+    ldi scratch, USBPID_DATA0 ^ USBPID_DATA1
+    ld r0, X
+    eor r0, scratch
+    st X+, r0                           ; toggle DATA PID
 
+    ; save TxBuf and txBytes for CRC
+    movw r24, X
+    mov r22, txBytes
+    mov scratch, txBytes
+    
     ; read Tx data from flash
-    ldi XL, lo8(usbTxBuf + 1)
-    ldi XL, hi8(usbTxBuf + 1)
-    ldi ZL, lo8(usbMsgBuf + 1)
-    ldi ZL, hi8(usbMsgBuf + 1)
+    movw ZL, usbMsgPtrReg
+    ; todo: combine flash read and CRC loop
+     rjmp copyFlashEnter
+copyFlash:
+    lpm r0, Z+
+    st X+, r0
+copyFlashEnter:
+    subi scratch, 1
+    brcc copyFlash 
+    movw usbMsgPtrReg, ZL               ; save MsgPtr for next IN
+1:
+    rcall usbCrc16Append
+
+    subi txBytes, -4                    ; add sync + PID + CRC16
+2:
+    mov r17, txBytes                    ; fixed register for usbTxLen
 ret
+#undef txBytes
+#undef scratch
 #endif
 
 ;----------------------------------------------------------------------------
@@ -153,18 +181,16 @@ ret
 #   define resCrcH  r25 /* result */
 
 ; temp variables
+#   define byte     r0
+#   define bitCnt   r23
 #   define ptrL     XL
 #   define ptrH     XH
 #   define ptr      x
-#   define byte     r18
-#   define bitCnt   r19
 #   define polyL    r20
 #   define polyH    r21
-#   define scratch  r23
 
 usbCrc16Append:
     movw    ptrL, argPtrL
-crc16Direct:                            ; ptr arg in X
     ldi     resCrcL, 0
     ldi     resCrcH, 0
     ldi     polyL, lo8(0xa001)

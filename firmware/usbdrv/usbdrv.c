@@ -288,7 +288,8 @@ static uchar usbDeviceRead(uchar *data, uchar len)
 /* usbBuildTxBlock() is called when we have data to transmit and the
  * interrupt routine's transmit buffer is empty.
  */
-static void usbBuildTxBlock(void)
+//static void usbBuildTxBlock(void)
+static inline void usbBuildTxBlock_old(void)
 {
 usbMsgLen_t wantLen;
 uchar       len;

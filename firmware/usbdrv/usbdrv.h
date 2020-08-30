@@ -102,7 +102,6 @@ extern "C" {
 #endif
 
 #include "usbconfig.h"
-//#include "usbportability.h"
 #include <avr/io.h>
 
 #ifdef __cplusplus
@@ -132,6 +131,9 @@ extern "C" {
  * usbdrv.c instead of linking against it. Including the C module of the driver
  * directly in your code saves a couple of bytes in flash memory.
  */
+
+#define usbMsgPtrReg r8
+#define usbMsgLenReg r16
 
 #ifndef __ASSEMBLER__
 #ifndef uchar
@@ -164,6 +166,8 @@ extern "C" {
 
 struct usbRequest;  /* forward declaration */
 
+extern void usbBuildTxBlock(void);      // in usbdrvasm.S
+
 USB_PUBLIC void usbInit(void);
 /* This function must be called before interrupts are enabled and the main
  * loop is entered. We exepct that the PORT and DDR bits for D+ and D- have
@@ -186,6 +190,7 @@ extern usbMsgPtr_t usbMsgPtr;
 
 // USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
 usbMsgLen_t usbFunctionSetup(uchar data[8]);
+
 /* This function is called when the driver receives a SETUP transaction from
  * the host which is not answered by the driver itself (in practice: class and
  * vendor requests). All control transfers start with a SETUP transaction where
