@@ -52,7 +52,8 @@ register usbMsgPtr_t         usbMsgPtr asm("r8");      /* data to tx next -- fla
 /* USB status registers / not shared with asm code */
 #ifdef MNHACK_NO_DATASECTION
 // static usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
-  usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
+//  usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
+register usbMsgLen_t  usbMsgLen asm("r16"); /* remaining number of bytes */
 #else
   static usbMsgLen_t  usbMsgLen = USB_NO_MSG; /* remaining number of bytes */
 #endif

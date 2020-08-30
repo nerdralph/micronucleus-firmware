@@ -107,7 +107,8 @@ setMsgPtr:
     movw r8, r20                        ; r8 fixed usbMsgPtr
 
 saveLen:
-    sts usbMsgLen, r24
+    ;sts usbMsgLen, r24
+    mov r16, r24                        ; r8 fixed usbMsgLen
 done:
 ret
 #undef rxToken
