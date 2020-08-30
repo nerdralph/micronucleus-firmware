@@ -37,7 +37,7 @@ uchar       usbDeviceAddr;      /* assigned during enumeration, defaults to 0 */
 uchar       usbNewDeviceAddr;   /* device ID which should be set after status phase */
 uchar       usbConfiguration;   /* currently selected configuration. Administered by driver, but not used */
 //volatile schar usbRxLen;        /* = 0; number of bytes in usbRxBuf; 0 means free, -1 for flow control */
-register volatile schar usbRxLen asm("r10");        /* = 0; usbRxBuf byte count; 0 means free, -1 for flow control */
+register schar usbRxLen asm("r10");        /* = 0; usbRxBuf byte count; 0 means free, -1 for flow control */
 uchar       usbCurrentTok;      /* last token received or endpoint number for last OUT token if != 0 */
 uchar       usbRxToken;         /* token for data we received; or endpont number for last OUT */
 volatile uchar usbTxLen;   /* number of bytes to transmit with next IN token or handshake token */
