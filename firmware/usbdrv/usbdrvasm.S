@@ -67,6 +67,9 @@ usbProcessRx:
     lds rxToken, usbRxToken
     cpi rxToken, USBPID_SETUP
     brne done
+;    breq 1f
+;    ret                                 ; ignore everything but SETUP
+;1:
     ldi r18, USBPID_DATA0               ; setup data toggling 
     sts usbTxBuf, r18
     movw ZL, r24
@@ -110,6 +113,7 @@ saveLen:
     mov usbMsgLenReg, r24               ; fixed register for usbMsgLen
 done:
 ret
+    ; todo: fall through to usbBuildTxBlock
 #undef rxToken
 
 #if 1
@@ -118,6 +122,7 @@ ret
 #define txBytes r19
 usbBuildTxBlock:
     ; transmit at most 8 bytes at a time
+
     mov txBytes, usbMsgLenReg
     cpi usbMsgLenReg, 8                 ; 8 bytes max data packet
     brlo 1f
@@ -127,6 +132,10 @@ usbBuildTxBlock:
     ; usbMsgLen = USB_NO_MSG only txbytes < 7
 1:  ldi usbMsgLenReg, -1                ; USB_NO_MSG = -1
 2:
+    ; combined Rx/Tx start
+    
+    ; combined Rx/Tx end
+    
     ldi XL, lo8(usbTxBuf)
     ldi XH, hi8(usbTxBuf)
     ldi scratch, USBPID_DATA0 ^ USBPID_DATA1
@@ -135,13 +144,16 @@ usbBuildTxBlock:
     st X+, r0                           ; toggle DATA PID
 
     ; save TxBuf and txBytes for CRC
-    movw r24, X
+    ; movw r24, X
+    ; mov scratch, txBytes
     mov r22, txBytes
-    mov scratch, txBytes
     
     ; read Tx data from flash
     movw ZL, usbMsgPtrReg
-    ; todo: combine flash read and CRC loop
+    ; combined flash read and CRC flashCrc16
+    rcall flashCrc16
+    movw usbMsgPtrReg, ZL               ; save MsgPtr for next IN
+#if 0
      rjmp copyFlashEnter
 copyFlash:
     lpm r0, Z+
@@ -152,6 +164,7 @@ copyFlashEnter:
     movw usbMsgPtrReg, ZL               ; save MsgPtr for next IN
 1:
     rcall usbCrc16Append
+#endif
 
     subi txBytes, -4                    ; add sync + PID + CRC16
 2:
@@ -189,6 +202,38 @@ ret
 #   define polyL    r20
 #   define polyH    r21
 
+; read from flash, store to RAM buffer and append CRC16
+; args: flash pointer in Z, RAM pointer in X, buffer length in r22
+flashCrc16:
+    ldi     resCrcL, 0
+    ldi     resCrcH, 0
+    ldi     polyL, lo8(0xa001)
+    ldi     polyH, hi8(0xa001)
+    com     argLen      ; argLen = -argLen - 1: modified loop to ensure that carry is set
+    ldi     bitCnt, 0   ; loop counter with starnd condition = end condition
+    rjmp    usbCrcLoopEntry
+usbCrcByteLoop:
+    lpm     byte, Z+
+    st      ptr+, byte
+    eor     resCrcL, byte
+usbCrcBitLoop:
+    ror     resCrcH     ; carry is always set here (see brcs jumps to here)
+    ror     resCrcL
+    brcs    usbCrcNoXor
+    eor     resCrcL, polyL
+    eor     resCrcH, polyH
+usbCrcNoXor:
+    subi    bitCnt, 224 ; (8 * 224) % 256 = 0; this loop iterates 8 times
+    brcs    usbCrcBitLoop
+usbCrcLoopEntry:
+    subi    argLen, -1
+    brcs    usbCrcByteLoop
+    st      ptr+, resCrcL
+    st      ptr+, resCrcH
+ret
+
+#if 0
+; v-usb CRC16 reads from RAM 
 usbCrc16Append:
     movw    ptrL, argPtrL
     ldi     resCrcL, 0
@@ -220,6 +265,7 @@ usbCrcLoopEntry:
     st      ptr+, resCrcH
     ret
 ; Thanks to Reimar Doeffinger for optimizing this CRC routine!
+#endif
 
 #undef argLen
 #undef argPtrL
