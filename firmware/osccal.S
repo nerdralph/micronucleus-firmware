@@ -24,31 +24,22 @@
 GLABEL tuneOsccal
     rcall tuneOnce
     rcall tuneOnce
-    rjmp tuneOnce
+    ; fall through for third time
 
 tuneOnce:
     rcall countFrame                    ; ignore 1st count
     rcall countFrame
-    .equ goal, (F_CPU/10000)            ; expected count for 1ms frame
-    subi countL, lo8(goal)
-    sbci countH, hi8(goal)
-    ; at 16.5Mhz, a 10% variation will be a difference of 165
-    ; assume 1 OSCCAL step = 1%, so divide by 16
-    ldi scratch, 4
-1:  asr countH
-    ror countL
-    dec scratch
-    brne 1b
-    ; round here using C?
+    ; assume 1 OSCCAL step = 0.667% fequency change
+    sbci countH, 150                    ; countH - 150 = change to OSCCAL 
     in scratch, OSCCAL    
-    sub scratch, countL
+    sub scratch, countH
     out OSCCAL, scratch
-    nop                                 ; probably not really needed
 ret
 
 ; countFrame counts the time to the next EOF/SOF
 ; end-of-frame has an idle guard band followed by SE0
 ; idle is DPLUS low & DMINUS high. save DPLUS history in shift
+; countL is used as a fractional accumulator with countH LSbit = 0.667%
 countFrame:
     ldi scratch, 0xFF
     clr countL
@@ -56,10 +47,12 @@ countFrame:
 waitSOF:                                ; 10-cycle loop
     in scratch, USBIN
     lsr shift
-    adiw countL, 1
+    .equ fMhz, (F_CPU/1000000)
+    adiw countL, 256/fMhz + 1           ; add 1 for rounding
     bst scratch, USBPLUS 
     bld shift, 7
     sbrs scratch, USBMINUS
     tst scratch
     brne waitSOF                        ; not idle last 7 loops
 ret
+
