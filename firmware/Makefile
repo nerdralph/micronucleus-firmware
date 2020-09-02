@@ -23,7 +23,7 @@ CONFIGBASEPATH	  = configuration
 CONFIGPATH	  = $(CONFIGBASEPATH)/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER ?= -c USBasp
+PROGRAMMER ?= -c USBasp -B3
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
@@ -37,8 +37,9 @@ CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-i
 
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,-Map=main.map
 
-OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
-OBJECTS += osccalASM.o
+OBJECTS =  crt1.o usbdrv/usbdrvasm.o main.o 
+#OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o usbdrv/usbdrv.o main.o
+OBJECTS += osccalASM.o osccal.o
 
 
 # symbolic targets:
@@ -58,10 +59,10 @@ all: main.hex upgrade.hex
 	@$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i -B 20
+	$(AVRDUDE) -U flash:w:main.hex:i
 
 readflash:
-	$(AVRDUDE) -U flash:r:read.hex:i -B 20
+	$(AVRDUDE) -U flash:r:read.hex:i
 
 fuse:
 	$(AVRDUDE) $(FUSEOPT) -B 20
@@ -70,11 +71,11 @@ disablereset:
 	$(AVRDUDE) $(FUSEOPT_DISABLERESET) -B 20
 
 read_fuses:
-	$(UISP) --rd_fuses -B 20
+	$(AVRDUDE) -B 20
 
 clean:
-	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s usbdrv/oddebug.c.lst main.lss main.lst
-	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map main.s upgrade.lss upgrade.lst upgrade.lss
+	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o usbdrv/oddebug.s usbdrv/usbdrv.s usbdrv/oddebug.c.lst main.lss main.lst
+	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map upgrade.lss upgrade.lst upgrade.lss
 
 distclean: clean
 	@rm *~
