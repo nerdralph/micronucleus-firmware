@@ -3,12 +3,16 @@
 
 #include "macros.inc"
 
-// #include "usbdrv/usbdrv.h"
+#define __SFR_OFFSET 0                  /* start SFRs at 0x00 not 0x20 */
+#include "usbdrv/usbdrv.h"
 
+/*
+; defines for standalone debugging 
 #define OSCCAL 0x31
-#define USBIN 0x15
-#define USBPLUS 1
-#define USBMINUS 1
+#define USBIN 0x16
+#define USBPLUS 4
+#define USBMINUS 3
+*/
 
 #define countH r25
 #define countL r24
