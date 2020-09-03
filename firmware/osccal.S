@@ -20,35 +20,36 @@
 #define shift r22
 
 ; tuneOsccal should be called after USB reset
-; needs to see 6 consecutive EOF/SOF transistions
+; needs to see 5 consecutive EOF/SOF transistions
 GLABEL tuneOsccal
+    rcall countFrame                    ; ignore 1st count
+    rcall countFrame
     rcall tuneOnce
     rcall tuneOnce
     ; fall through to tuneOnce for third time
 
 tuneOnce:
-    rcall countFrame                    ; ignore 1st count
-    rcall countFrame
     ; assume 1 OSCCAL step = 0.667% fequency changea so 100% = 150
     sbci countH, 150                    ; countH - 150 = change to OSCCAL 
     in scratch, OSCCAL    
     sub scratch, countH
     out OSCCAL, scratch
-ret
+    ; fall through to countFrame for next tuning
 
 ; countFrame counts the time to the next EOF/SOF
 ; end-of-frame has an idle guard band followed by SE0
 ; idle is DPLUS low & DMINUS high. save DPLUS history in shift
 ; countL is used as a fractional accumulator with countH LSbit = 0.667%
+.equ fMhz, (F_CPU/1000000)
+.equ fraction, 256/fMhz + 1             ; add 1 for rounding
 countFrame:
     ldi scratch, 0xFF
-    clr countL
+    ldi countL, fraction                ; countFrame overhead adjustment
     clr countH
 waitSOF:                                ; 10-cycle loop
     in scratch, USBIN
     lsr shift
-    .equ fMhz, (F_CPU/1000000)
-    adiw countL, 256/fMhz + 1           ; add 1 for rounding
+    adiw countL, fraction
     bst scratch, USBPLUS 
     bld shift, 7
     sbrs scratch, USBMINUS
