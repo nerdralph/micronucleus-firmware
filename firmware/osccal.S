@@ -17,19 +17,19 @@
 #define countH r25
 #define countL r24
 #define scratch r23
-#define shift r23
+#define shift r22
 
 ; tuneOsccal should be called after USB reset
 ; needs to see 6 consecutive EOF/SOF transistions
 GLABEL tuneOsccal
     rcall tuneOnce
     rcall tuneOnce
-    ; fall through for third time
+    ; fall through to tuneOnce for third time
 
 tuneOnce:
     rcall countFrame                    ; ignore 1st count
     rcall countFrame
-    ; assume 1 OSCCAL step = 0.667% fequency change
+    ; assume 1 OSCCAL step = 0.667% fequency changea so 100% = 150
     sbci countH, 150                    ; countH - 150 = change to OSCCAL 
     in scratch, OSCCAL    
     sub scratch, countH
