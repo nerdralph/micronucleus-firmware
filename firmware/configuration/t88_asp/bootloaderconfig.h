@@ -229,10 +229,10 @@
  *  comes with its own OSCCAL calibration or an external clock source is used.
  */
 
-#define OSCCAL_RESTORE_DEFAULT 0
+#define OSCCAL_RESTORE_DEFAULT 1
 #define OSCCAL_SAVE_CALIB 0
 #define OSCCAL_HAVE_XTAL 0
-#define OSCCAL_SLOW_PROGRAMMING 0
+#define OSCCAL_SLOW_PROGRAMMING 1
 
 /*
  *  Defines handling of an indicator LED while the bootloader is active.
