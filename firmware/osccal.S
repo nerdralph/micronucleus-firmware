@@ -22,28 +22,31 @@
 ; tuneOsccal should be called after USB reset
 ; needs to see 5 consecutive EOF/SOF transistions
 GLABEL tuneOsccal
+    ;sts NRDR, r1                        ; debug
+reset:
+    sbis USBIN, USBMINUS
+    rjmp reset                          ; wait for bus reset to end
     rcall countFrame                    ; ignore 1st count
     rcall countFrame
     rcall tuneOnce
     rcall tuneOnce
     ; fall through to tuneOnce for third time
 
+.equ fMhz, (F_CPU/1000000)
+.equ goal, fMhz * 100 * fraction        ; each fraction is 10 cycles
 tuneOnce:
-    ; assume 1 OSCCAL step = 0.667% fequency changea so 100% = 150
-    subi countH, 150                    ; countH - 150 = change to OSCCAL 
-    ;in scratch, OSCCAL
+    subi countH, hi8(goal)              ; countH-goal = change to OSCCAL 
     LOAD scratch, OSCCAL
     sub scratch, countH
-    ;out OSCCAL, scratch
     STORE OSCCAL, scratch
+    nop                                 ; let OSCCAL stabilize
     ; fall through to countFrame for next tuning
 
 ; countFrame counts the time to the next EOF/SOF
 ; end-of-frame has an idle guard band followed by SE0
 ; idle is DPLUS low & DMINUS high. save DPLUS history in shift
-; countL is used as a fractional accumulator with countH LSbit = 0.667%
-.equ fMhz, (F_CPU/1000000)
-.equ fraction, (2*384/fMhz + 1) / 2     ; (256/.667)/fMhz rounded
+; countL is used as a fractional accumulator with countH LSbit =~ 0.5%
+.equ fraction, (2*512/fMhz + 1) / 2     ; (256/.5)/fMhz rounded
 countFrame:
     ldi shift, 0xFF
     ldi countL, fraction                ; countFrame overhead adjustment
@@ -57,5 +60,6 @@ waitSOF:                                ; 10-cycle loop
     sbrs scratch, USBMINUS
     tst shift
     brne waitSOF                        ; not idle last 7 loops
+    ;sts NRDR, countH                    ; debug
 ret
 

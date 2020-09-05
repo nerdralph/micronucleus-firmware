@@ -419,7 +419,7 @@ int main(void) {
                     if (resetDetected) {
                         resetDetected = 0; // do it only once after reset
 #    if (OSCCAL_HAVE_XTAL == 0)
-                        calibrateOscillatorASM();
+                        tuneOsccal();
 #    endif
 #    if (FAST_EXIT_NO_USB_MS > 0)
                     idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by end of a reset condition
@@ -449,7 +449,7 @@ int main(void) {
                      * It will wait forever, if no host is connected and the pullup at D- was detached.
                      * In this case we recognize a (dummy) host reset but no toggling at D- will occur.
                      */
-                    calibrateOscillatorASM();
+                    tuneOsccal();
 #  endif
 #if (FAST_EXIT_NO_USB_MS > 0)
                     idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by getting a reset
