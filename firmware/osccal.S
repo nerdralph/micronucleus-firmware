@@ -30,10 +30,12 @@ GLABEL tuneOsccal
 
 tuneOnce:
     ; assume 1 OSCCAL step = 0.667% fequency changea so 100% = 150
-    sbci countH, 150                    ; countH - 150 = change to OSCCAL 
-    in scratch, OSCCAL    
+    subi countH, 150                    ; countH - 150 = change to OSCCAL 
+    ;in scratch, OSCCAL
+    LOAD scratch, OSCCAL
     sub scratch, countH
-    out OSCCAL, scratch
+    ;out OSCCAL, scratch
+    STORE OSCCAL, scratch
     ; fall through to countFrame for next tuning
 
 ; countFrame counts the time to the next EOF/SOF
@@ -41,9 +43,9 @@ tuneOnce:
 ; idle is DPLUS low & DMINUS high. save DPLUS history in shift
 ; countL is used as a fractional accumulator with countH LSbit = 0.667%
 .equ fMhz, (F_CPU/1000000)
-.equ fraction, 256/fMhz + 1             ; add 1 for rounding
+.equ fraction, (2*384/fMhz + 1) / 2     ; (256/.667)/fMhz rounded
 countFrame:
-    ldi scratch, 0xFF
+    ldi shift, 0xFF
     ldi countL, fraction                ; countFrame overhead adjustment
     clr countH
 waitSOF:                                ; 10-cycle loop
@@ -53,7 +55,7 @@ waitSOF:                                ; 10-cycle loop
     bst scratch, USBPLUS 
     bld shift, 7
     sbrs scratch, USBMINUS
-    tst scratch
+    tst shift
     brne waitSOF                        ; not idle last 7 loops
 ret
 
