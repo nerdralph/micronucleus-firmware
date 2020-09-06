@@ -126,9 +126,6 @@ enum {
 register uint8_t sLoopCommand asm("r3");  // bind sLoopCommand to r3
 
 /* ------------------------------------------------------------------------ */
-static inline void eraseApplication(void);
-static void writeFlashPage(void);
-static void writeWordToPageBuffer(uint16_t data);
 static inline void leaveBootloader(void);
 void blinkLED(uint8_t aBlinkCount);
 
@@ -188,7 +185,7 @@ static inline void writeFlashPage(void) {
  * Handling user-reset-vector is done in the host tool, starting with firmware V2.
  */
 static void writeWordToPageBuffer(uint16_t data) {
-
+ 
 #ifndef ENABLE_UNSAFE_OPTIMIZATIONS // adds 10 bytes
 #  if BOOTLOADER_ADDRESS < 8192
     // rjmp
@@ -474,22 +471,29 @@ int main(void) {
             asm volatile("wdr");
             // perform cyclically watchdog reset, for the case it is fused on and we can not disable it.
 
+
+            if ((sLoopCommand == cmd_erase_application) | 
+                (sLoopCommand == cmd_write_page)) {
 #if OSCCAL_SLOW_PROGRAMMING // reduce clock to enable save flash programming timing
-            uint8_t osccal_tmp  = OSCCAL;
-            OSCCAL      = osccal_default;
+                uint8_t osccal_tmp  = OSCCAL;
+                OSCCAL      = osccal_default;
+                asm("nop");
 #endif
-            /*
-             * sLoopCommand is only evaluated here and set by usbFunctionSetup()
-             */
-            if (sLoopCommand == cmd_erase_application) {
-                eraseApplication();
-            }
-            if (sLoopCommand == cmd_write_page) {
-                writeFlashPage();
-            }
+                /*
+                 * sLoopCommand is only evaluated here and set by usbFunctionSetup()
+                 */
+                if (sLoopCommand == cmd_erase_application) {
+                    eraseApplication();
+                }
+                else {
+                //if (sLoopCommand == cmd_write_page) {
+                    writeFlashPage();
+                }
 #if OSCCAL_SLOW_PROGRAMMING
-            OSCCAL      = osccal_tmp;
+                OSCCAL      = osccal_tmp;
+                asm("nop");
 #endif
+            }
 
             if (sLoopCommand == cmd_exit) {
                 if (!t5msTimeoutCounter) {
