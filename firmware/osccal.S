@@ -22,44 +22,46 @@
 ; tuneOsccal should be called after USB reset
 ; needs to see 5 consecutive EOF/SOF transistions
 GLABEL tuneOsccal
-    ;sts NRDR, r1                        ; debug
 reset:
     sbis USBIN, USBMINUS
     rjmp reset                          ; wait for bus reset to end
+    ;sts NRDR, r1                        ; debug
     rcall countFrame                    ; ignore 1st count
     rcall countFrame
     rcall tuneOnce
     rcall tuneOnce
     ; fall through to tuneOnce for third time
 
-.equ fMhz, (F_CPU/1000000)
-.equ goal, fMhz * 100 * fraction        ; each fraction is 10 cycles
+.equ fKHz, (F_CPU/1000)
+.equ goal, (fKHz / 12) * fraction       ; each fraction is 12 cycles
 tuneOnce:
     subi countH, hi8(goal)              ; countH-goal = change to OSCCAL 
     LOAD scratch, OSCCAL
     sub scratch, countH
     STORE OSCCAL, scratch
-    nop                                 ; let OSCCAL stabilize
+    ;sts NRDR, countH                    ; debug
     ; fall through to countFrame for next tuning
 
 ; countFrame counts the time to the next EOF/SOF
-; end-of-frame has an idle guard band followed by SE0
-; idle is DPLUS low & DMINUS high. save DPLUS history in shift
+; end-of-frame has an idle guard band followed by SE0 (D+ & D- low)
+; idle is D+ low & D- high. save D+ history in shift
 ; countL is used as a fractional accumulator with countH LSbit =~ 0.5%
-.equ fraction, (2*512/fMhz + 1) / 2     ; (256/.5)/fMhz rounded
+; fraction = (256/.5)/fMHz rounded
+.equ fraction, ((2 * 512)/(fKHz / 1000) + 1) / 2
 countFrame:
     ldi shift, 0xFF
     ldi countL, fraction                ; countFrame overhead adjustment
     clr countH
-waitSOF:                                ; 10-cycle loop
-    in scratch, USBIN
+waitSOF:                                ; 12-cycle loop
     lsr shift
+    in scratch, USBIN
+    or scratch, r0
     adiw countL, fraction
     bst scratch, USBPLUS 
     bld shift, 7
-    sbrs scratch, USBMINUS
+    in r0, USBIN
+    sbrs r0, USBMINUS
     tst shift
     brne waitSOF                        ; not idle last 7 loops
-    ;sts NRDR, countH                    ; debug
 ret
 
