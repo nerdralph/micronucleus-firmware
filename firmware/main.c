@@ -104,14 +104,12 @@ const __flash uint8_t configurationReply[6] = {
 typedef union {
     uint16_t w;
     uint8_t b[2];
-} uint16_union_t;
+} u16_union_t;
 
-#if OSCCAL_RESTORE_DEFAULT
-  register uint8_t      osccal_default  asm("r2");
-#endif
+register uint8_t osccal_default asm("r2");
 
-register uint16_union_t currentAddress asm("r4");  // r4/r5 current progmem address, used for erasing and writing
-register uint16_union_t idlePolls asm("r6");  // r6/r7 idle counter - each tick is 5 milliseconds
+register u16_union_t currentAddress asm("r4");  // r4/r5 current progmem address, used for erasing and writing
+register u16_union_t idlePolls asm("r6");  // r6/r7 idle counter - each tick is 5 milliseconds
 
 // sLoopCommand used to trigger functions to run in the main loop
 enum {
@@ -314,10 +312,7 @@ __attribute__((__noreturn__)) static inline void leaveBootloader(void) {
     // bootLoaderExit() is a Macro defined in bootloaderconfig.h and mainly empty except for ENTRY_JUMPER, where it resets the pullup.
     bootLoaderExit();
 
-#if OSCCAL_RESTORE_DEFAULT
-  OSCCAL=osccal_default;
-  asm volatile("nop"); // NOP to avoid CPU hickup during oscillator stabilization
-#endif
+    if (OSCCAL_RESTORE_DEFAULT) OSCCAL=osccal_default;
 
 #if (defined __AVR_ATmega328P__)||(defined __AVR_ATmega168P__)||(defined __AVR_ATmega88P__)||(defined __AVR_ATtiny828__)
   // Tell the system that we want to read from the RWW memory again.
@@ -333,24 +328,30 @@ __attribute__((__noreturn__)) static inline void leaveBootloader(void) {
 
 void USB_handler(void); // must match name used in usbconfig.h line 25 and implemented in usbdrvasm.S
 
-int main(void) {
+#if 0
+int newmain(void) {
+    bootLoaderInit();
+    tuneOsccal();
+    USB_handler();
+    usbBuildTxBlock();
+}
+#endif
 
+int main(void) {
     // bootLoaderInit() is a Macro defined in bootloaderconfig.h and mainly empty except for ENTRY_JUMPER, where it sets the pullup and waits 1 ms.
     bootLoaderInit();
-
     /* save default OSCCAL calibration  */
-#if OSCCAL_RESTORE_DEFAULT
-  osccal_default = OSCCAL;
-#endif
+    if (OSCCAL_RESTORE_DEFAULT) osccal_default = OSCCAL;
+
+    if ((OSCCAL_HAVE_XTAL == 0) && (F_CPU == 12000000))
+        OSCCAL = 224;                   // boost clock to near 12MHz
 
 #if OSCCAL_SAVE_CALIB
     // Adjust clock to previous calibration value, so bootloader AND User program starts with proper clock calibration, even when not connected to USB
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
-    if (stored_osc_calibration != 0xFF) {
+    if (stored_osc_calibration != 0xFF)
         OSCCAL = stored_osc_calibration;
-        // we changed clock so "wait" for one cycle
-        asm volatile("nop");
-    }
+
 #endif
     // bootLoaderStartCondition() is a Macro defined in bootloaderconfig.h and mainly is set to true or checks a bit in MCUSR
     if (bootLoaderStartCondition() || (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1) == 0xff)) {
@@ -415,9 +416,8 @@ int main(void) {
                      */
                     if (resetDetected) {
                         resetDetected = 0; // do it only once after reset
-#    if (OSCCAL_HAVE_XTAL == 0)
-                        tuneOsccal();
-#    endif
+                        if (OSCCAL_HAVE_XTAL == 0)
+                            tuneOsccal();
 #    if (FAST_EXIT_NO_USB_MS > 0)
                     idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by end of a reset condition
 #    endif
@@ -440,14 +440,13 @@ int main(void) {
                     resetDetected = 1;  // Set flag to wait for reset to end before calling calibrateOscillatorASM() or reset idlePolls.
 #  endif  // OSCCAL_HAVE_XTAL
 #else
-#  if (OSCCAL_HAVE_XTAL == 0)
                     /*
                      * Called if we received an host reset. This waits for the D- line to toggle or at least.
                      * It will wait forever, if no host is connected and the pullup at D- was detached.
                      * In this case we recognize a (dummy) host reset but no toggling at D- will occur.
                      */
-                    tuneOsccal();
-#  endif
+                     if (OSCCAL_HAVE_XTAL == 0)
+                         tuneOsccal();
 #if (FAST_EXIT_NO_USB_MS > 0)
                     idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by getting a reset
 #endif
@@ -474,11 +473,14 @@ int main(void) {
 
             if ((sLoopCommand == cmd_erase_application) | 
                 (sLoopCommand == cmd_write_page)) {
-#if OSCCAL_SLOW_PROGRAMMING // reduce clock to enable save flash programming timing
-                uint8_t osccal_tmp  = OSCCAL;
-                OSCCAL      = osccal_default;
-                asm("nop");
-#endif
+// OSCCAL_SLOW_PROGRAMMING is probably useless
+// http://nerdralph.blogspot.com/2020/09/flashing-avrs-at-high-speed.html  
+                uint8_t osccal_tmp = 0;
+                if (OSCCAL_SLOW_PROGRAMMING) {
+                    osccal_tmp  = OSCCAL;
+                    OSCCAL      = osccal_default;
+                }
+
                 /*
                  * sLoopCommand is only evaluated here and set by usbFunctionSetup()
                  */
@@ -489,10 +491,8 @@ int main(void) {
                 //if (sLoopCommand == cmd_write_page) {
                     writeFlashPage();
                 }
-#if OSCCAL_SLOW_PROGRAMMING
-                OSCCAL      = osccal_tmp;
-                asm("nop");
-#endif
+                if (OSCCAL_SLOW_PROGRAMMING)
+                    OSCCAL      = osccal_tmp;
             }
 
             if (sLoopCommand == cmd_exit) {
