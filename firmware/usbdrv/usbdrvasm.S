@@ -50,11 +50,6 @@ the file appropriate for the given clock rate.
 #   define  USB_STORE_PENDING(reg)  sts USB_INTR_PENDING, reg
 #endif
 
-#define usbTxLen1   usbTxStatus1
-#define usbTxBuf1   (usbTxStatus1 + 1)
-#define usbTxLen3   usbTxStatus3
-#define usbTxBuf3   (usbTxStatus3 + 1)
-
 .equ o_bmRequestType, 0
 .equ o_bRequest,    1
 .equ o_wValue,      2
@@ -104,12 +99,9 @@ rq_std:
     ldi r21, hi8(usbDescriptorConfiguration)
     ldi r24, 9                          ; length
 setMsgPtr:
-    ;sts usbMsgPtr, r20
-    ;sts usbMsgPtr+1, r21
     movw usbMsgPtrReg, r20              ; fixed register for usbMsgPtr
 
 saveLen:
-    ;sts usbMsgLen, r24
     mov usbMsgLenReg, r24               ; fixed register for usbMsgLen
 done:
 ret

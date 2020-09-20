@@ -54,6 +54,7 @@ ignorePacket:
 ;----------------------------------------------------------------------------
 ;This is the only non-error exit point for the software receiver loop
 ;we don't check any CRCs here because there is no time left.
+; token is a misleading name below, as only SETUP, IN & OUT are token PIDs
 se0:
     subi    cnt, USB_BUFSIZE    ;[5]
     neg     cnt                 ;[6]
@@ -96,8 +97,13 @@ waitForData:
 
 storeTokenAndReturn:
     sts     usbCurrentTok, token;[35]
+    ; ret here causes enumeration failures - confuses polling
+    ; with packets for other addresses on bus?
+    ;ret
 doReturn:
     POP_STANDARD                ;[37] 12...16 cycles
+    ; the next control transfer should not be until the next frame (1ms)
+    ; may be able to omit following in some cases
     USB_LOAD_PENDING(XL)        ;[49]
     sbrc    XL, USB_INTR_PENDING_BIT;[50] check whether data is already arriving
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
@@ -110,6 +116,7 @@ sofError:
 handleData:
     lds     shift, usbCurrentTok;[18]
     tst     shift               ;[20]
+    ; could this be ret?
     breq    doReturn            ;[21]
     ;lds     x2, usbRxLen        ;[22]
     ;tst     x2                  ;[24]

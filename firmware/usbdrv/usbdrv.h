@@ -166,20 +166,22 @@ extern "C" {
 
 struct usbRequest;  /* forward declaration */
 
-extern void usbBuildTxBlock(void);      // in usbdrvasm.S
+extern void usbBuildTxBlock(void);
+/* usbBuildTxBlock() is called when we have data to transmit and the
+ * interrupt routine's transmit buffer is empty.  Moved to usbdrvasm.S by RD
+ */
+
+extern void usbProcessRx(uchar *data, uchar len);
+/* usbProcessRx() is called for every message received by the interrupt
+ * routine. It distinguishes between SETUP and DATA packets and processes
+ * them accordingly.  Moved to usbdrvasm.S by RD
+ */
 
 USB_PUBLIC void usbInit(void);
 /* This function must be called before interrupts are enabled and the main
  * loop is entered. We exepct that the PORT and DDR bits for D+ and D- have
  * not been changed from their default status (which is 0). If you have changed
  * them, set both back to 0 (configure them as input with no internal pull-up).
- */
-//USB_PUBLIC void usbPoll(void); // Replaced for micronucleus V2
-/* This function must be called at regular intervals from the main loop.
- * Maximum delay between calls is somewhat less than 50ms (USB timeout for
- * accepting a Setup message). Otherwise the device will not be recognized.
- * Please note that debug outputs through the UART take ~ 0.5ms per byte
- * at 19200 bps.
  */
 
 extern usbMsgPtr_t usbMsgPtr;
@@ -461,17 +463,14 @@ at90s1200, attiny11, attiny12, attiny15, attiny28: these have no RAM
 
 #ifndef __ASSEMBLER__
 
+#if 0
 typedef struct usbTxStatus{
     volatile uchar   len;
     uchar   buffer[USB_BUFSIZE];
 }usbTxStatus_t;
 
 extern usbTxStatus_t   usbTxStatus1, usbTxStatus3;
-#define usbTxLen1   usbTxStatus1.len
-#define usbTxBuf1   usbTxStatus1.buffer
-#define usbTxLen3   usbTxStatus3.len
-#define usbTxBuf3   usbTxStatus3.buffer
-
+#endif
 
 typedef union usbWord{
     unsigned    word;
