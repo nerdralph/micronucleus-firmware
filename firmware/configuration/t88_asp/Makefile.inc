@@ -19,7 +19,7 @@ DEVICE = attiny88
 # - For data size up to 1408 the address is 1A80 for size from 1409 to 1471 the address is 1A40 from 1472 1A00
 BOOTLOADER_ADDRESS = 1A80
 
-FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
+FUSEOPT = -U lfuse:w:0xC2:m -U hfuse:w:0xDD:m -U efuse:w:0xFE:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 
 #---------------------------------------------------------------------
@@ -52,10 +52,10 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 #        +-------------------- RSTDISBL (disable external reset -> disabled!)
 #
 # Fuse low byte:
-# 0xe1 = 1 1 1 0   0 0 0 1
+# 0xC2 = 1 1 0 0   - - 1 0
 #        ^ ^ \+/   \--+--/
-#        | |  |       +------- CKSEL 3..0 (clock selection -> HF PLL)
-#        | |  +--------------- SUT 1..0 (BOD enabled, fast rising power)
+#        | |  |       +------- CKSEL 1..0 (clock selection -> RC OSC)
+#        | |  +--------------- SUT 1..0 (BOD enabled) 6CK/14CK
 #        | +------------------ CKOUT (clock output on CKOUT pin -> disabled)
 #        +-------------------- CKDIV8 (divide clock by 8 -> don't divide)
 

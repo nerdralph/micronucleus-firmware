@@ -68,9 +68,8 @@
 /* ------------------------------------------------------------------------- */
 
 // how many milliseconds should host wait till it sends another erase or write?
-// needs to be above 4.5 (and a whole integer) as avr freezes maximum for 4.5ms
-// while writing a FLASH page (even for 128 byte page size:-))
-#define MICRONUCLEUS_WRITE_SLEEP 5
+// at 12Mhz flash writes take only 2.6ms
+#define MICRONUCLEUS_WRITE_SLEEP 3
 
 
 /* ---------------------- feature / code size options ---------------------- */
@@ -232,7 +231,7 @@
 #define OSCCAL_RESTORE_DEFAULT 1
 #define OSCCAL_SAVE_CALIB 0
 #define OSCCAL_HAVE_XTAL 0
-#define OSCCAL_SLOW_PROGRAMMING 1
+#define OSCCAL_SLOW_PROGRAMMING 0
 
 /*
  *  Defines handling of an indicator LED while the bootloader is active.
