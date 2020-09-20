@@ -43,14 +43,6 @@
 
 #ifndef __ASSEMBLER__
 	void calibrateOscillatorASM(void); // from osccalASM.S
-/*
-  #if FAST_EXIT_NO_USB_MS>0
-    extern uint16_union_t idlePolls;
-    #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ idlePolls.b[1]=0; calibrateOscillatorASM();}
-  #else
-    #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ calibrateOscillatorASM();}
-  #endif
-*/
   #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 
