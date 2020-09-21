@@ -301,7 +301,7 @@ usbSendAndReti:
     in      x1, USBOUT          ;[-7] port mirror for tx loop
     ldi     shift, 0x40         ;[-6] sync byte is first byte sent (we enter loop after ror)
     ldi     x2, USBMASK         ;[-5]
-    push    x4                  ;[-4]
+    ;push    x4                  ;[-4]
 doExorN1:
     eor     x1, x2              ;[-2] [06] [62]
     ldi     x4, 6               ;[-1] [07] [63]
@@ -372,9 +372,11 @@ skipAddrAssign:
     cbr     x2, USBMASK         ;[07] set both pins to input
     mov     x3, x1              ;[08]
     cbr     x3, USBMASK         ;[09] configure no pullup on both pins
-    pop     x4                  ;[10]
-    nop2                        ;[12]
-    nop2                        ;[14]
+    ;pop     x4                  ;[10]
+    ;nop2                        ;[12]
+    ;nop2                        ;[14]
+    lpm     r0, Z               ;[10]
+    lpm     r0, Z               ;[13]
     out     USBOUT, x1          ;[16] <-- out J (idle) -- end of SE0 (EOP signal)
     out     USBDDR, x2          ;[17] <-- release bus now
     out     USBOUT, x3          ;[18] <-- ensure no pull-up resistors are active
