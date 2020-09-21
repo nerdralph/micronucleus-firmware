@@ -150,12 +150,11 @@ handleIn:
     brge    sendNakAndReti      ;[33] unprocessed input packet?
     ;ldi     x1, USBPID_NAK      ;[34] prepare value for usbTxLen
     ;lds     cnt, usbTxLen       ;[37]
-    ; r17 is usbTxLen
-    mov     cnt, r17
+    mov     cnt, usbTxLenReg
     sbrc    cnt, 4              ;[39] all handshake tokens have bit 4 set
     rjmp    sendCntAndReti      ;[40] 42 + 16 = 58 until SOP
     ; sts     usbTxLen, x1        ;[41] x1 == USBPID_NAK from above
-    ldi     r17, USBPID_NAK     ;[41] - todo: update cycle count
+    ldi     usbTxLenReg, USBPID_NAK     ;[41] - todo: update cycle count
     ldi     XL, lo8(usbTxBuf)   ;[43]
     ldi     XH, hi8(usbTxBuf)   ;[44]
     rjmp    usbSendAndReti      ;[45] 57 + 12 = 59 until SOP

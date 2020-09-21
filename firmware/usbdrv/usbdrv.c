@@ -40,7 +40,6 @@ uchar       usbConfiguration;   /* currently selected configuration. Administere
 register schar usbRxLen asm("r10");        /* = 0; usbRxBuf byte count; 0 means free, -1 for flow control */
 uchar       usbCurrentTok;      /* last token received or endpoint number for last OUT token if != 0 */
 uchar       usbRxToken;         /* token for data we received; or endpont number for last OUT */
-//volatile uchar usbTxLen;   /* number of bytes to transmit with next IN token or handshake token */
 register uchar usbTxLen asm("r17");   /* number of bytes to transmit with next IN token or handshake token */
 uchar       usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbTxLen contains handshake token */
 

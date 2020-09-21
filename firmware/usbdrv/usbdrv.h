@@ -134,6 +134,7 @@ extern "C" {
 
 #define usbMsgPtrReg r8
 #define usbMsgLenReg r16
+#define usbTxLenReg r17
 
 #ifndef __ASSEMBLER__
 #ifndef uchar

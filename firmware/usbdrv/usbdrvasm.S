@@ -160,7 +160,7 @@ copyFlashEnter:
 
     subi txBytes, -4                    ; add sync + PID + CRC16
 2:
-    mov r17, txBytes                    ; fixed register for usbTxLen
+    mov usbTxLenReg, txBytes            ; fixed register for usbTxLen
 ret
 #undef txBytes
 #undef scratch
