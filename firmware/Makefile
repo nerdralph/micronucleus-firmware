@@ -23,7 +23,7 @@ CONFIGBASEPATH	  = configuration
 CONFIGPATH	  = $(CONFIGBASEPATH)/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER ?= -c USBasp -B3
+PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
@@ -44,6 +44,10 @@ OBJECTS += osccalASM.o osccal.o
 
 # symbolic targets:
 all: main.hex upgrade.hex
+
+gencrc:	gencrc.c
+	gcc $< -I$(CONFIGPATH) -o $@
+	./$@
 
 .c.o:
 	@$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$<.lst
