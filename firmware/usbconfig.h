@@ -66,10 +66,12 @@
  * you may use one of obdev's free shared VID/PID pairs. See the file
  * USB-IDs-for-free.txt for details!
  */
+#define MICRONUCLEUS_VERSION_MAJOR 2
+#define MICRONUCLEUS_VERSION_MINOR 6
+
 #define USB_CFG_DEVICE_VERSION MICRONUCLEUS_VERSION_MINOR, MICRONUCLEUS_VERSION_MAJOR
 /* Version number of the device: Minor number first, then major number.
  */
- // electric arrow - not compliant with obdev's rules but we'll have our own vid-pid soon
 //#define USB_CFG_VENDOR_NAME 0x2301
 //#define USB_CFG_VENDOR_NAME_LEN 1
 //#define USB_CFG_VENDOR_NAME 'd','i','g','i','s','t','u','m','p','.','c','o','m'
@@ -97,7 +99,8 @@
  * to fine tune control over USB descriptors such as the string descriptor
  * for the serial number.
  */
-#define USB_CFG_DEVICE_CLASS        0xff    /* set to 0 if deferred to interface */
+// #define USB_CFG_DEVICE_CLASS        0xFF    /* set to 0 if deferred to interface */
+#define USB_CFG_DEVICE_CLASS        0    /* set to 0 if deferred to interface */
 #define USB_CFG_DEVICE_SUBCLASS     0
 //#define USB_CFG_DEVICE_CLASS    0xFE /* application specific */
 //#define USB_CFG_DEVICE_SUBCLASS 0x01 /* device firmware upgrade */
