@@ -25,9 +25,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/gpl.html>.
  */
 
-#define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 42
-
 #define RECONNECT_DELAY_MILLIS 300 // Time between disconnect and connect. Even 250 is to fast!
 #define __DELAY_BACKWARD_COMPATIBLE__ // Saves 2 bytes at _delay_ms(). Must be declared before the include util/delay.h
 
@@ -41,7 +38,7 @@
 #include "usbdrv/usbdrv.c"
 
 // Microcontroller vector table entries in the flash
-#define RESET_VECTOR_OFFSET         0 // is 0 for all ATtinies
+#define RESET_VECTOR                0 // address 0
 
 // number of bytes before the boot loader vectors to store the application reset vector
 #define TINYVECTOR_RESET_OFFSET     4 // need 4 bytes for user reset vector to support devices with more than 8k FLASH
@@ -187,14 +184,14 @@ static void writeWordToPageBuffer(uint16_t data) {
 #ifndef ENABLE_UNSAFE_OPTIMIZATIONS // adds 10 bytes
 #  if BOOTLOADER_ADDRESS < 8192
     // rjmp
-    if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
+    if (currentAddress.w == RESET_VECTOR * 2) {
         data = 0xC000 + (BOOTLOADER_ADDRESS / 2) - 1;
     }
 #  else
   // far jmp
-  if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
+  if (currentAddress.w == RESET_VECTOR * 2) {
     data = 0x940c;
-  } else if (currentAddress.w == (RESET_VECTOR_OFFSET + 1 ) * 2) {
+  } else if (currentAddress.w == (RESET_VECTOR + 1 ) * 2) {
     data = (BOOTLOADER_ADDRESS/2);
   }
   #endif
