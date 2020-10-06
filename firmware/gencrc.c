@@ -21,7 +21,7 @@ const char DDesc[] = {
     0,                      // product string index
     0,                      // serial number string index
     1,                      // number of configurations
-    1                       // CRC salt
+    0,                      // CRC salt padding
 };
 
 
