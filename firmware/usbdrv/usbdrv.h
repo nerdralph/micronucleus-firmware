@@ -154,17 +154,6 @@ extern "C" {
  */
 #define USB_NO_MSG  ((usbMsgLen_t)-1)   /* constant meaning "no message" */
 
-#ifndef usbMsgPtr_t
-#define usbMsgPtr_t uchar *
-#endif
-/* Making usbMsgPtr_t a define allows the user of this library to define it to
- * an 8 bit type on tiny devices. This reduces code size, especially if the
- * compiler supports a tiny memory model.
- * The type can be a pointer or scalar type, casts are made where necessary.
- * Although it's paradoxical, Gcc 4 generates slightly better code for scalar
- * types than for pointers.
- */
-
 struct usbRequest;  /* forward declaration */
 
 extern void usbBuildTxBlock(void);
@@ -185,7 +174,8 @@ USB_PUBLIC void usbInit(void);
  * them, set both back to 0 (configure them as input with no internal pull-up).
  */
 
-extern usbMsgPtr_t usbMsgPtr;
+#define usbMsgPtr_t uchar *
+// extern usbMsgPtr_t usbMsgPtr;
 /* This variable may be used to pass transmit data to the driver from the
  * implementation of usbFunctionWrite(). It is also used internally by the
  * driver for standard control requests.
