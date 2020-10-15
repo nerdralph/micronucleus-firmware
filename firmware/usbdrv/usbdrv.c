@@ -18,8 +18,6 @@
  * code cleanup and optimization by Ralph Doncaster 2020-08
  */
 
-#define MNHACK_NO_DATASECTION
-
 #include "usbdrv.h"
 #include "oddebug.h"
 
@@ -85,6 +83,7 @@ const __flash char usbDescriptorDevice[] = {    /* USB device descriptor */
     0,                      /* product string index */
     0,                      /* serial number string index */
     1,                      /* number of configurations */
+    //0                       // salt
 };
 #endif
 
@@ -122,10 +121,9 @@ const __flash char usbDescriptorConfiguration[] = {    /* USB configuration desc
 
 USB_PUBLIC void usbInit(void)
 {
-#ifdef MNHACK_NO_DATASECTION
     usbTxLen = USBPID_NAK;
     usbMsgLen = USB_NO_MSG;
-#endif
+    usbRxLen = 0;
 
 #if USB_INTR_CFG_SET != 0
     USB_INTR_CFG |= USB_INTR_CFG_SET;
