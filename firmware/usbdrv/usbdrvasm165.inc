@@ -304,22 +304,6 @@ didUnstuff4:                ;[   ]
     rjmp    continueWithBit5;[053]
 ;   [---]                   ;[054]
 
-macro POP_STANDARD ; 16 cycles
-#    pop     cnt // not needed, since it is no ISR any more, it is a plain function.
-#    pop     x4
-#    pop     x3
-#    pop     x2
-#    pop     x1
-#    pop     shift
-#    pop     XH
-#    pop     r0
-    endm
-macro POP_RETI     ; 5 cycles
-#    pop     XL
-#    out     SREG, XL
-#    pop     XL
-    endm
-
 #include "asmcommon.inc"
 
 

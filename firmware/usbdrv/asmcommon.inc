@@ -32,12 +32,6 @@ Outside jump destinations used by this module:
     sendNakAndReti:
     sendCntAndReti:
     usbSendAndReti:
-
-The following macros must be defined before this file is included:
-    .macro POP_STANDARD
-    .endm
-    .macro POP_RETI
-    .endm
 */
 
 #define token   x1
@@ -101,17 +95,14 @@ storeTokenAndReturn:
     ; with packets for other addresses on bus?
     ;ret
 doReturn:
-    POP_STANDARD                ;[37] 12...16 cycles
+    ; cycle counts are lower with interrupt-free
     ; the next control transfer should not be until the next frame (1ms)
     ; may be able to omit following in some cases
     USB_LOAD_PENDING(XL)        ;[49]
     sbrc    XL, USB_INTR_PENDING_BIT;[50] check whether data is already arriving
-    rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
+    rjmp    waitForJ            ;[51] a new interrupt is already pending
 sofError:
-    POP_RETI                    ;macro call
-
     ret                         ;02-02-2014 not called from INT in micronucleus.
-;    reti
 
 handleData:
     lds     shift, usbCurrentTok;[18]

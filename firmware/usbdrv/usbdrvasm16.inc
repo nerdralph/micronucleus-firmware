@@ -190,22 +190,6 @@ didUnstuffO:
     brcc    rxByteLoop  ;[01]
     rjmp    overflow
 
-macro POP_STANDARD ; 14 cycles
-#    pop     cnt
-#    pop     x4
-#    pop     x3
-#    pop     x2
-#    pop     x1
-#    pop     shift
-#    pop     bitcnt
-    endm
-macro POP_RETI     ; 7 cycles
-#    pop     XH
-#    pop     XL
-#    out     SREG, XL
-#    pop     XL
-    endm
-
 #include "asmcommon.inc"
 
 ; USB spec says:

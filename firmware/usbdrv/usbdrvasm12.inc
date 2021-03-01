@@ -237,20 +237,6 @@ unstuff7:
     nop                 ;1 [66]
     rjmp    didUnstuff7 ;2 [68]
 
-macro POP_STANDARD ; 12 cycles
-#    pop     cnt
-#    pop     x3
-#    pop     x2
-#    pop     x1
-#    pop     shift
-#    pop     XH
-    endm
-macro POP_RETI     ; 5 cycles
-#    pop     XL
-#    out     SREG, XL
-#    pop     XL
-    endm
-
 #include "asmcommon.inc"
 
 ;----------------------------------------------------------------------------
