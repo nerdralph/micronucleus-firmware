@@ -42,7 +42,7 @@
 
 
 #ifndef __ASSEMBLER__
-	void calibrateOscillatorASM(void); // from osccalASM.S
+    void tuneOsccal(void);                  // from osccal.S
   #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 
@@ -67,7 +67,7 @@
  * USB-IDs-for-free.txt for details!
  */
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 6
+#define MICRONUCLEUS_VERSION_MINOR 0x06
 
 #define USB_CFG_DEVICE_VERSION MICRONUCLEUS_VERSION_MINOR, MICRONUCLEUS_VERSION_MAJOR
 /* Version number of the device: Minor number first, then major number.
