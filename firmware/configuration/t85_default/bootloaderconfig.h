@@ -244,6 +244,7 @@
 #define OSCCAL_RESTORE_DEFAULT 0
 #define OSCCAL_SAVE_CALIB 1
 #define OSCCAL_HAVE_XTAL 0
+#define OSCCAL_SLOW_PROGRAMMING 0
 
 /*
  *  Defines handling of an indicator LED while the bootloader is active.
