@@ -145,18 +145,6 @@ usbBuildTxBlock:
     ; combined flash read and CRC flashCrc16
     rcall flashCrc16
     movw usbMsgPtrReg, ZL               ; save MsgPtr for next IN
-#if 0
-     rjmp copyFlashEnter
-copyFlash:
-    lpm r0, Z+
-    st X+, r0
-copyFlashEnter:
-    subi scratch, 1
-    brcc copyFlash 
-    movw usbMsgPtrReg, ZL               ; save MsgPtr for next IN
-1:
-    rcall usbCrc16Append
-#endif
 
     subi txBytes, -4                    ; add sync + PID + CRC16
 2:
@@ -223,41 +211,6 @@ usbCrcLoopEntry:
     st      ptr+, resCrcL
     st      ptr+, resCrcH
 ret
-
-#if 0
-; v-usb CRC16 reads from RAM 
-usbCrc16Append:
-    movw    ptrL, argPtrL
-    ldi     resCrcL, 0
-    ldi     resCrcH, 0
-    ldi     polyL, lo8(0xa001)
-    ldi     polyH, hi8(0xa001)
-    com     argLen      ; argLen = -argLen - 1: modified loop to ensure that carry is set
-    ldi     bitCnt, 0   ; loop counter with starnd condition = end condition
-    rjmp    usbCrcLoopEntry
-usbCrcByteLoop:
-    ld      byte, ptr+
-    eor     resCrcL, byte
-;    sec
-usbCrcBitLoop:
-    ror     resCrcH     ; carry is always set here (see brcs jumps to here)
-    ror     resCrcL
-    brcs    usbCrcNoXor
-    eor     resCrcL, polyL
-    eor     resCrcH, polyH
-usbCrcNoXor:
-    subi    bitCnt, 224 ; (8 * 224) % 256 = 0; this loop iterates 8 times
-    brcs    usbCrcBitLoop
-usbCrcLoopEntry:
-    subi    argLen, -1
-    brcs    usbCrcByteLoop
-;    subi    argLen, 1
-;    brne    usbCrcByteLoop
-    st      ptr+, resCrcL
-    st      ptr+, resCrcH
-    ret
-; Thanks to Reimar Doeffinger for optimizing this CRC routine!
-#endif
 
 #undef argLen
 #undef argPtrL
